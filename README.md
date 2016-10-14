@@ -36,7 +36,7 @@ Solve "m" problem
 
 For getting m small, at first we set small m and we will increse(double) m iteratively, when loadFactor will be more that 0.9 
 
-![](http://dl2.joxi.net/drive/2016/10/14/0011/0529/758289/89/679e335dcd.jpg)
+![](http://dl2.joxi.net/drive/2016/10/14/0011/0529/758289/89/1316ffb61b.jpg)
 
 Universal family hash functions 
 
