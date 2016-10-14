@@ -4,6 +4,18 @@ import:
   version: 0.8.0
   subpackages:
   - prometheus
+- package: github.com/hashicorp/consul/api
+- package: github.com/juju/loggo
+- package: github.com/beorn7/perks
+- package: github.com/golang/protobuf
+- package: github.com/matttproud/golang_protobuf_extensions 
+- package: github.com/prometheus/client_model
+- package: github.com/prometheus/common
+  subpackages:
+  - expfmt
+  - model
+  - internal/bitbucket.org/ww/goautoneg
+- package: github.com/prometheus/procfs
 testImport:
 - package: gopkg.in/check.v1
   version: 64131543e7896d5bcc6bd5a76287eb75ea96c673

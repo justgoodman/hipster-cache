@@ -1,5 +1,5 @@
-hash: 84b94b3d5c623c9657b8d5ebf02dfec2218abf164fa5fae8d87ede77665deb1f
-updated: 2016-09-29T17:00:11.699935259+03:00
+hash: 4b275ef448cc1ac3d1ec9f5848541d00be5e1e5463d4899e0659a46fad2dfd28
+updated: 2016-10-14T01:26:23.602176703+03:00
 imports:
 - name: github.com/beorn7/perks
   version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
@@ -9,6 +9,28 @@ imports:
   version: f592bd283e9ef86337a432eb50e592278c3d534d
   subpackages:
   - proto
+- name: github.com/hashicorp/consul
+  version: 6197cc802a61508f4e4529bdeb0cb8c38543b0ab
+  subpackages:
+  - api
+- name: github.com/hashicorp/go-cleanhttp
+  version: ad28ea4487f05916463e2423a55166280e8254b5
+- name: github.com/hashicorp/serf
+  version: 1d4fa605f6ff3ed628d7ae5eda7c0e56803e72a5
+  subpackages:
+  - coordinate
+- name: github.com/juju/ansiterm
+  version: b99631de12cf04a906c1d4e4ec54fb86eae5863d
+  subpackages:
+  - tabwriter
+- name: github.com/juju/loggo
+  version: 3b7ece48644d35850f4ced4c2cbc2cf8413f58e0
+- name: github.com/lunixbochs/vtclean
+  version: 4fbf7632a2c6d3fbdb9931439bdbbeded02cbe36
+- name: github.com/mattn/go-colorable
+  version: 6c903ff4aa50920ca86087a280590b36b3152b9c
+- name: github.com/mattn/go-isatty
+  version: 66b8e73f3f5cda9f96b69efd03dd3d7fc4a5cdb8
 - name: github.com/matttproud/golang_protobuf_extensions
   version: c12348ce28de40eed0136aa2b644d0ee0650e56c
   subpackages:
@@ -25,12 +47,14 @@ imports:
   version: ebdfc6da46522d58825777cf1f90490a5b1ef1d8
   subpackages:
   - expfmt
-  - model
   - internal/bitbucket.org/ww/goautoneg
+  - model
 - name: github.com/prometheus/procfs
   version: abf152e5f3e97f2fafac028d2cc06c1feb87ffa5
-- name: golang.org/x/net
-  version: 9f0e377a8a39bb99ff03459d77c135a0042878f0
+- name: golang.org/x/sys
+  version: 9bb9f0998d48b31547d975974935ae9b48c7a03c
   subpackages:
-  - context
-devImports: []
+  - unix
+testImports:
+- name: gopkg.in/check.v1
+  version: 64131543e7896d5bcc6bd5a76287eb75ea96c673
