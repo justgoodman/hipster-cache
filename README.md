@@ -54,6 +54,10 @@ Algoritm:
 1. Apply random hash function from the polynomial family to the string. We get some integer number module "p"
 2. Apply random hash function the universal family for integers less than "p". We get a number between 0 and m-1 
 
+![](http://dl2.joxi.net/drive/2016/10/14/0011/0529/758289/89/20d72e0e7c.jpg)
+
+in this formula, we can set a,b randomaly, p is the big prime number, must be more than x
+
 For this algorithm we have this lemma:
 
 ![](http://dl1.joxi.net/drive/2016/10/14/0011/0529/758289/89/6369f8eaaf.jpg)
