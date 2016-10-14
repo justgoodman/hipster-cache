@@ -38,6 +38,36 @@ For getting m small, at first we set small m and we will increse(double) m itera
 
 ![](http://dl2.joxi.net/drive/2016/10/14/0011/0529/758289/89/679e335dcd.jpg)
 
+Universal family hash functions 
+
+![](http://dl2.joxi.net/drive/2016/10/14/0011/0529/758289/89/3c62b8bcf5.jpg)
+
+![](http://dl2.joxi.net/drive/2016/10/14/0011/0529/758289/89/5992d73d33.jpg)
+
+In string Universal family function we have problem that based on this lemma for small "c",we need to take big "p"(cardinality of the hash function).If wetake big "p" we will consumption to much memory.
+
+What we can do?
+
+We can use Univeral family for integer under the result of string hash function  
+
+Algoritm:
+1. Apply random hash function from the polynomial family to the string. We get some integer number module "p"
+2. Apply random hash function the universal family for integers less than "p". We get a number between 0 and m-1 
+
+For this algorithm we have this lemma:
+
+![](http://dl1.joxi.net/drive/2016/10/14/0011/0529/758289/89/6369f8eaaf.jpg)
+
+So that is not an universal family bease for a universal family there shouldn't be any summon L over p the probability of collision shold be at most 1 over m. But we can be very close to universal family becase we can contol "p".We can make P very big and l/p will be very small and the probabolity of collision we be at most 1/m
+
+![](http://dl2.joxi.net/drive/2016/10/14/0011/0529/758289/89/83ce9a16f4.jpg)
+
+For big enought p we will have:
+c = O(1 + alpha), where c - lenght of the longest chain,apha - load factor
+
+Computing PolyHash(s) runs in time O(|S|)
+
+If lenght of the names are bounded by constant L, computing h(S) takes O(L) = O(1) time
 
 
 
