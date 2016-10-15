@@ -24,6 +24,16 @@ type HashTable struct {
 	responseTimeMetric *prometheus.SummaryVec
 }
 
+// For implement get operation for all types data you can implement this interface 
+type IGetterValue interface {
+     func GetValue(value interface{})
+}
+
+// For implement set operation for all types data you can implemet this interface
+type ISetterValue interface {
+     func SetValue(sourceValue interface{}, newValue interface{}) (valueSizeBytes int)
+}
+
 const (
 	namespace = "hispter_cache"
 )
@@ -31,6 +41,7 @@ const (
 func NewHashTable() *HashTable {
 	return &HashTable{}
 }
+
 
 func (this *HashTable) initMerics() {
 	this.countElementsMetric := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -84,8 +95,54 @@ func (this *HashTable) SetElement(key string,value interface) {
 	responseMetric.Observe(getDurationMicroseconds(time.Since(timeStart))
 }
 
+func (this *HashTable) appendList(key, value string) error {
+	// Find Element
+	var (
+		chain *Chain
+		chainMutex *sync.RWMutex
+		ok	bool
+	)
+	hashKey := hashFunction.CalculateHash(key)
+
+	this.mutexChain.RLock()
+	chain, ok := this.chains[hashKey]
+	this.mutexChain.RULock()
+
+	if !ok {
+		return fmt.Errorf(`Can't find element by key`)
+	}
+
+	this.mutexChainMutexes.RLock()
+	chainMutex,ok := this.chainsMutex[hashKey]
+	this.mutexChainMutexed.RULock()
+
+	if !ok {
+		chainMutex := &sync.Mutex{}
+		this.mutexChainMutexes.Lock()
+		this.chainsMutex[hasKey] = chainMutex
+		this.mutexChainMutexes.Unlock()
+	}
+
+	chainMutex.Lock()
+
+	element := chain.findElement(key)
+
+	if element != nil {
+		deltaBytes = element.setValue(value)
+		hasAdded = false
+	} else {
+		return fmt.Errorf(`Can't find element by key`)
+	}
+
+	chainLenght = chain.lenght
+
+
+
+}
+
+
 // Return delta byte size
-func (this *HashTable) setElement(key string, value interface) (hasAdded bool, chainLenght int, deltaBytes int) {
+func (this *HashTable) setElement(key string, setOpertionObject ISetOperation, value interface) (hasAdded bool, chainLenght int, deltaBytes int) {
        var (
 		chain *Chain
 		chainMutex *sync.RWMutex

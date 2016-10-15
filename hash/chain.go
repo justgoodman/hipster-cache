@@ -18,7 +18,7 @@ func NewChain(firstElement *ChainElement) &Chain {
 }
 
 
-func NewChainElement(key string, value interface) *Chain {
+func NewChainElement(key string, ) *Chain {
         chain := &Chain(key: key)
         chain.setValue(value)
         return chain
