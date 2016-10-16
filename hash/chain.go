@@ -8,7 +8,7 @@ type Chain struct {
 
 type ChainElement struct {
         key string
-        byteSize int
+        valueByteSize int
         value interface
 }
 
@@ -18,9 +18,9 @@ func NewChain(firstElement *ChainElement) &Chain {
 }
 
 
-func NewChainElement(key string, ) *Chain {
-        chain := &Chain(key: key)
-        chain.setValue(value)
+func NewChainElement(key string) *Chain {
+        chain := &ChainElement(key: key)
+	chain.byteSize := unsage.Sizeof(this) + len(key)
         return chain
 }
 
@@ -30,14 +30,19 @@ func (this *ChainElement) getNewByteSize(value interface) int {
                 case string:
                         byteSize += unsafe.Sizeof(this) + len(v)
         }
+	return byteSize
 }
 
-func (this *ChainElement) setValue(value interface) int {
-        newByteSize := getNewByteSize(value)
-        deltaByteSize := newByteSize - this.byteSize
-        this.byteSize = getNewByteSize(value)
-        this.value = value
+func (this *ChainElement) setValue(setterValue ISetterValue,value interface) (deltaBytes int) {
+	newValueByteSize := setterValue.setValue(this.value, value)
+
+        deltaByteSize = newValueByteSize - this.valueByteSize
+        this.valueByteSize = valueByteSize
         return deltaByteSize
+}
+
+func (this *ChainElement) getValue(getterValue IGetterValue) {
+	getterValue.getValue(this.value)
 }
 
 func (this *Chain) findElement(key string) *ChainElement {

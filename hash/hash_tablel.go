@@ -36,12 +36,12 @@ type ISetterValue interface {
 
 const (
 	namespace = "hispter_cache"
+	maximumLoadFactor = 0.9
 )
 
 func NewHashTable() *HashTable {
 	return &HashTable{}
 }
-
 
 func (this *HashTable) initMerics() {
 	this.countElementsMetric := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -68,6 +68,19 @@ func (this *HashTable) initMerics() {
 			Help:      "Cache reponse time",
 			Namespace: NAMESPACE,
 		}, []string{"operation"})
+
+	this.hitCountMetric := prometheus.NewCount(prometheus.CountOpts{
+                        Name:      "hit_total",
+                        Help:      "Hit count",
+                        Namespace: namespace,
+                })
+
+	this.missCountMetric := prometheus.NewCount(prometheus.CountOpts{
+                        Name:      "miss_total",
+                        Help:      "Miss count",
+                        Namespace: namespace,
+                })
+
 }
 
 //  get duration in microsecond for sub: time1-time2
@@ -75,10 +88,10 @@ func getDurationMicroseconds(duration time.Duration) float64 {
 	return float64(duration) / float64(time.Microsecond)
 }
 
-func (this *HashTable) SetElement(key string,value interface) {
+func (this *HashTable) SetElement(key string,value interface{}, setterValue ISetterValue) {
 	timeStart := time.Now()
 
-	hasAdded, chainLenght, deltaBytes := this.setElement(key,value)
+	hasAdded, chainLenght, deltaBytes := this.setElement(key,value, setterValue)
 	if hadAdded {
 		countElements := atomic.AddUint64(&this.countElements,1)
 		this.countElementsMetric.Set(float64(countElemenets))
@@ -95,49 +108,20 @@ func (this *HashTable) SetElement(key string,value interface) {
 	responseMetric.Observe(getDurationMicroseconds(time.Since(timeStart))
 }
 
-func (this *HashTable) appendList(key, value string) error {
-	// Find Element
-	var (
-		chain *Chain
-		chainMutex *sync.RWMutex
-		ok	bool
-	)
-	hashKey := hashFunction.CalculateHash(key)
+func (this *HashTable) GetElement(key string,value interface{}, getterValue IGetterValue) {
+	timeStart := time.Now()
 
-	this.mutexChain.RLock()
-	chain, ok := this.chains[hashKey]
-	this.mutexChain.RULock()
+	this.getElement(key,getterValue)
 
-	if !ok {
-		return fmt.Errorf(`Can't find element by key`)
+	if this.getElement(key,getterValue) {
+		this.hitMetric.Inc()
+	}
+	else {
+		this.missMetric.Inc()
 	}
 
-	this.mutexChainMutexes.RLock()
-	chainMutex,ok := this.chainsMutex[hashKey]
-	this.mutexChainMutexed.RULock()
-
-	if !ok {
-		chainMutex := &sync.Mutex{}
-		this.mutexChainMutexes.Lock()
-		this.chainsMutex[hasKey] = chainMutex
-		this.mutexChainMutexes.Unlock()
-	}
-
-	chainMutex.Lock()
-
-	element := chain.findElement(key)
-
-	if element != nil {
-		deltaBytes = element.setValue(value)
-		hasAdded = false
-	} else {
-		return fmt.Errorf(`Can't find element by key`)
-	}
-
-	chainLenght = chain.lenght
-
-
-
+	responseMetric := this.responseTimeMetric.WithLabelValues("get")
+	responseMetric.Observe(getDurationMicroseconds(time.Since(timeStart))
 }
 
 
@@ -155,7 +139,8 @@ func (this *HashTable) setElement(key string, setOpertionObject ISetOperation, v
 	this.mutexChain.RULock()
 
 	if !ok {
-		chainElement := NewChainElement(key,value)
+		chainElement := NewChainElement(key)
+		chainElement.SetValue(setOperationObject,value)
 		chain := NewChain(chainElement)
 
 		deltaBytes = chainElement.byteSize + unsafe.Sizeof(chain)
@@ -187,7 +172,7 @@ func (this *HashTable) setElement(key string, setOpertionObject ISetOperation, v
 		deltaBytes = element.setValue(value)
 		hasAdded = false
 	} else {
-		chainElement := NewChainElement(key,value)
+		chainElement := NewChainElement(setOperationObject,value)
 		chain.AddElement(chainElement)
 
 		deltaBytes = chainElement.sizeButes
@@ -202,5 +187,102 @@ func (this *HashTable) setElement(key string, setOpertionObject ISetOperation, v
 }
 
 
+func (this *HashTable) getElement(key string, getOpertionObject IGetOperation, value interface) (isHit bool) {
+       var (
+		chain *Chain
+		chainMutex *sync.RWMutex
+		ok	bool
+	)
+	hashKey := hashFunction.CalculateHash(key)
 
+	this.mutexChain.RLock()
+	chain, ok := this.chains[hashKey]
+	this.mutexChain.RULock()
 
+	if !ok {
+		return
+	}
+
+	this.mutexChainMutexes.RLock()
+	chainMutex,ok := this.chainsMutex[hashKey]
+	this.mutexChainMutexed.RULock()
+
+	if !ok {
+		return
+	}
+
+	chainMutex.RLock()
+
+	element := chain.findElement(key)
+	isHit = true
+
+	if element != nil {
+		deltaBytes = element.getValue(getOperationObject)
+	}
+
+	chainLenght = chain.lenght
+
+	chainMutex.RUnlock()
+
+	return
+}
+
+func (this *HashTable) reHaching() {
+	countChanks := atomic.LoadUint64(this.&capacity)
+	countElements := atomic.LoadUint64(this.&countElements)
+
+	if countElement/countChanks <= 0.9 {
+		return
+	}
+
+	newCapacity := countChanks*2
+	newChanks := [newCapacity]*Chank
+	newMutexes := [newCapacity]
+	newHashFunction := NewHashFunction()
+	newSizeBytes := this.sizeBytes + (nosafe.Sizeof(*Chank) + nosafe.Sizeof(*sync.RWMutex)) * countChanks
+
+	this.mutexChain.Lock()
+
+	var chainElement *ChainElement
+	for _, chain := range(this.chainsMutex) {
+		if chain == nil {
+			continue
+		}
+		for chainElement := chain.FirstElement, chainElement != nill, chainElement = nextChainElement) {
+			nextChainElement = chainElement.next
+			// We will use it element in the new chain
+			chainElement.next = nil
+			this.reHachingAddElement(newChains,newHashFunction,chainElement)
+		}
+	}
+
+	this.capacity = newCapacity
+	this.chainMutexes = newMutexes
+	this.hasFunction = newHashFunction
+	this.sizeBytes = newSizeBytes
+
+	this.mutexChain.Unlock()
+	
+	// AddNewMetic
+	this.rehashingCountMetric.Inc()
+	this.countBytesMetric.Set(newSizeBytes)
+}
+
+func (this *HashTable) reHachingAddElement(chains []*Chain, hashFunction *hashFunction, chainElement *ChainElement) {
+       var (
+		chain *Chain
+		chainMutex *sync.RWMutex
+		ok	bool
+	)
+	hashKey := hashFunction.CalculateHash(chainElement.key)
+
+	chain, ok := chains[hashKey]
+
+	if !ok {
+		chain := NewChain(chainElement)
+		this.chains[hashKey] := chain
+		return
+	}
+
+	chain.AddElement(chainElement)
+}
