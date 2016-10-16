@@ -18,6 +18,8 @@ type HashTable struct {
 	chainsMutex []*sync.RWMutex
 	mutexChainsMutex sync.RWMutex
 	lruChain *Chain
+	// We will use LRU after we acheve this value and we will not use reHaching	
+	maximumBytesSize uint
 
 	countElementsMetric *prometheus.Gauge
 	bytesSizeMetric *prometheus.Gauge
@@ -152,7 +154,7 @@ func (this *HashTable) GetElement(key string,value interface{}, getterValue IGet
 	responseMetric.Observe(getDurationMicroseconds(time.Since(timeStart))
 }
 
-func (this *HashTable) RemoveElement(element *ChainElement) {
+func (this *HashTable) RemoveElement(element *ChainElement) (sizeBytes int) {
 	element.chainMutex.Lock()
 	// We try to delete first element
 	if element.prev = nil {
@@ -169,7 +171,7 @@ func (this *HashTable) RemoveElement(element *ChainElement) {
 
 	prevLRU := element.prevLRU
 	nextLRU := element.nextLRU
-	sizeBytes := element.sizeByte
+	sizeBytes = element.sizeByte
 	element.chainMutex.Unlock()
 	this.lruChain.delete(element,prevLRU,nextLRU)
 }
@@ -319,13 +321,42 @@ func (this *HashTable) deleteElement(key string) (deletedBytes int) {
 	chainMutex.RUnlock()
 }
 
+func (this *HashTable) lruEviction() {
+	sizeBytes := atomic.LoadUint64(this.&sizeBytes)
+       if this.maximumSizeBytes <= sizeBytes {
+		return
+	}
+
+	// We will free 10% of maximumSizeBytes
+	needFreeSize = sizeBytes - (this.maxumumSizeByte - this.maximumSizeBytes/10)
+
+	var freeBytes uint
+	var element *ChainElement
+	var countElements int
+	for element = this.lruChain.lastElement; element != nil, element = element.prevLRU {
+		freeBytes += this.deleteElement(element)
+		countElements++
+		if freeBytes >= needFreeSize {
+			break
+		}
+	}
+	atomic.AddUint64(&this.sizeBytes, -1*freeBytes)
+	atomic.AddUint64(&this.countElements, -1*countElements)
+}
 
 
 func (this *HashTable) reHaching() {
 	countChanks := atomic.LoadUint64(this.&capacity)
 	countElements := atomic.LoadUint64(this.&countElements)
+	sizeBytes := atomic.LoadUint64(this.&sizeBytes)
 
 	if countElement/countChanks <= 0.9 {
+		return
+	}
+
+	newSizeBytes := sizeBytes + (nosafe.Sizeof(*Chank) + nosafe.Sizeof(*sync.RWMutex)) * countChanks
+
+	if this.maximumSizeBytes <= newSizeBytes {
 		return
 	}
 
@@ -333,7 +364,6 @@ func (this *HashTable) reHaching() {
 	newChanks := [newCapacity]*Chank
 	newMutexes := [newCapacity]
 	newHashFunction := NewHashFunction()
-	newSizeBytes := this.sizeBytes + (nosafe.Sizeof(*Chank) + nosafe.Sizeof(*sync.RWMutex)) * countChanks
 
 	this.mutexChain.Lock()
 
