@@ -1,59 +1,64 @@
 package tcp
 
 import (
-	"net"
 	"fmt"
-//	"time"
+	"net"
+	//	"time"
 
-        "hipster-cache/common"
+	"hipster-cache/common"
+	"hipster-cache/hash_table"
 )
 
 type CacheServer struct {
-	port int
-	logger common.ILogger
-	listener *net.TCPListener
+	port      int
+	logger    common.ILogger
+	listener  *net.TCPListener
+	hashTable *hash.HashTable
 }
 
-func NewCacheServer(port int, logger common.ILogger) *CacheServer {
-	return &CacheServer{port:port, logger:logger}
+func NewCacheServer(port int, logger common.ILogger, hashTable *hash.HashTable) *CacheServer {
+	return &CacheServer{port: port, logger: logger, hashTable: hashTable}
 }
 
-func (this *CacheServer) InitConnection() error {
-     tcpAddr, err := net.ResolveTCPAddr("tcp4", fmt.Sprintf(`:%d`,this.port))
-     if err != nil {
+func (s *CacheServer) InitConnection() error {
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", fmt.Sprintf(`:%d`, s.port))
+	if err != nil {
 		return err
 	}
 
-     this.listener, err = net.ListenTCP("tcp", tcpAddr)
-    return err
+	s.listener, err = net.ListenTCP("tcp", tcpAddr)
+	return err
 }
 
-func (this *CacheServer) Run() {
-      for {
-        conn, err := this.listener.Accept()
-        if err != nil {
-                this.logger.Errorf(`Connection error: "%s"`, err.Error())
-                continue
-        }
-        go this.handleMessage(conn)
-//      conn.Write([]byte("Bratish vse ok"))
-//      conn.Close()
-      }
+func (s *CacheServer) Run() {
+	for {
+		conn, err := s.listener.Accept()
+		if err != nil {
+			s.logger.Errorf(`Connection error: "%s"`, err.Error())
+			continue
+		}
+		go s.handleMessage(conn)
+		//      conn.Write([]byte("Bratish vse ok"))
+		//      conn.Close()
+	}
 }
 
-func (this *CacheServer) handleMessage(conn net.Conn) {
+func (s *CacheServer) handleMessage(conn net.Conn) {
 	var buf [512]byte
 	for {
 		n, err := conn.Read(buf[0:])
 		if err != nil {
-			this.logger.Errorf(`Read message error: "%s"`, err.Error())
+			s.logger.Errorf(`Read message error: "%s"`, err.Error())
+			if err = conn.Close(); err != nil {
+				s.logger.Errorf(`Close connection error: "%s"`, err.Error())
+			}
+			return
 		}
 		fmt.Println(string(buf[0:n]))
 		conn.Write([]byte(string(buf[0:n]) + " Bratish vse ok"))
-	//	time.Sleep(time.Second * 10)
-//		conn.Close()
-//		return
+		//	time.Sleep(time.Second * 10)
+		//		conn.Close()
+		//		return
 	}
 	return
 }
-
