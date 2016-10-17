@@ -149,7 +149,7 @@ func boolToString(value bool) string {
 func (h *HashTable) GetElement(key string,value interface{}, getterValue IGetterValue) *ChainElement {
 	timeStart := time.Now()
 
-	isHit,chainElement := h.getElement(key,getterValue)
+	isHit,chainElement := h.getElement(key,value, getterValue)
 
 	if chainElement.expDate.Unix() < time.Now().Unix() {
 		isHit = false
@@ -193,7 +193,7 @@ func (h *HashTable) RemoveElement(element *ChainElement) (sizeBytes uint64) {
 }
 
 
-func (h *HashTable) setElement(key string, expDate time.Time, value interface{},setOpertionObject ISetterValue) (chainElement *ChainElement,hasAdded bool, chainLenght int, deltaBytes int) {
+func (h *HashTable) setElement(key string, expDate time.Time, value interface{},setOperationObject ISetterValue) (chainElement *ChainElement,hasAdded bool, chainLenght int, deltaBytes uint64) {
        var (
 		chain *Chain
 		chainMutex *sync.RWMutex
@@ -203,80 +203,81 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 
 	h.mutexChains.RLock()
 	chain = h.chains[hashKey]
-	h.mutexChains.RULock()
+	h.mutexChains.RUnlock()
 
 	if chain == nil {
 		chainElement = NewChainElement(key)
-		chainElement.SetValue(setOperationObject,value, expDate)
+		chainElement.setValue(setOperationObject,value, expDate)
 		chain := NewChain(chainElement)
 
-		deltaBytes = chainElement.byteSize + unsafe.Sizeof(chain)
+		deltaBytes = uint64(chainElement.valueByteSize) + uint64(unsafe.Sizeof(chainElement)) + uint64(unsafe.Sizeof(chain))
 		hasAdded = true
-		chainLeight = 1
+		chainLenght = 1
 
-		h.mutexChain.Lock()
+		h.mutexChains.Lock()
 		h.chains[hashKey] = chain
-		h.mutexChain.Unlock()
+		h.mutexChains.Unlock()
 
-		// For safe work with object
-		chainElement = chainElement.copy()
 		return
 	}
 
-	h.mutexChainMutexes.RLock()
-	chainMutex,ok = h.chainsMutex[hashKey]
-	h.mutexChainMutexed.RULock()
+	h.mutexChainsMutex.RLock()
+	chainMutex = h.chainsMutex[hashKey]
+	h.mutexChainsMutex.RUnlock()
 
-	if !ok {
-		chainMutex := &sync.Mutex{}
-		h.mutexChainMutexes.Lock()
-		h.chainsMutex[hasKey] = chainMutex
-		h.mutexChainMutexes.Unlock()
+
+	// @Check
+	if chainMutex == nil {
+		chainMutex := &sync.RWMutex{}
+		h.mutexChainsMutex.Lock()
+		h.chainsMutex[hashKey] = chainMutex
+		h.mutexChainsMutex.Unlock()
 	}
-
 	chainMutex.Lock()
 
 	chainElement = chain.findElement(key)
 
 	if chainElement != nil {
-		deltaBytes = element.setValue(value)
+		deltaBytes = uint64(chainElement.setValue(setOperationObject,value, expDate))
 		hasAdded = false
 	} else {
 		chainElement = NewChainElement(key)
 		chainElement.setValue(setOperationObject,value, expDate)
-		chain.AddElement(chainElement)
+		chain.addElement(chainElement)
 
-		deltaBytes = chainElement.sizeButes
+		deltaBytes = uint64(chainElement.valueByteSize) + uint64(unsafe.Sizeof(chain)) + uint64(unsafe.Sizeof(chainElement))
 		hasAdded = false
 	}
 
-	chainLenght = chain.lenght
+	chainLenght = chain.countElements
 
 	chainMutex.Unlock()
+
+	return
 }
 
 
-func (h *HashTable) getElement(key string, getOpertionObject IGetOperation, value interface{}) (isHit bool, chainElement *ChainElement) {
+func (h *HashTable) getElement(key string,  value interface{}, getOperationObject IGetterValue) (isHit bool, chainElement *ChainElement) {
        var (
 		chain *Chain
 		chainMutex *sync.RWMutex
 		ok	bool
 	)
-	hashKey := hashFunction.CalculateHash(key)
+	hashKey := h.hashFunction.CalculateHash(key)
 
-	h.mutexChain.RLock()
+	h.mutexChains.RLock()
 	chain = h.chains[hashKey]
-	h.mutexChain.RULock()
+	h.mutexChains.RUnlock()
 
 	if chain == nil {
 		return
 	}
 
-	h.mutexChainMutexes.RLock()
-	chainMutex,ok = h.chainsMutex[hashKey]
-	h.mutexChainMutexed.RULock()
+	h.mutexChainsMutex.RLock()
+	chainMutex = h.chainsMutex[hashKey]
+	h.mutexChainsMutex.RUnlock()
 
-	if !ok {
+	if chainMutex == nil {
 		return
 	}
 
@@ -286,35 +287,34 @@ func (h *HashTable) getElement(key string, getOpertionObject IGetOperation, valu
 	isHit = true
 
 	if chainElement != nil {
-		deltaBytes = chainElement.getValue(getOperationObject)
+		chainElement.getValue(getOperationObject)
 	}
 
-	chainLenght = chain.lenght
-
 	chainMutex.RUnlock()
+	return
 }
 
-func (h *HashTable) deleteElement(key string) (deletedBytes int) {
+func (h *HashTable) deleteElement(key string) (deletedBytes uint64) {
        var (
 		chain *Chain
 		chainMutex *sync.RWMutex
 		ok	bool
 	)
-	hashKey := hashFunction.CalculateHash(key)
+	hashKey := h.hashFunction.CalculateHash(key)
 
-	h.mutexChain.RLock()
-	chain, ok = h.chains[hashKey]
-	h.mutexChain.RULock()
+	h.mutexChains.RLock()
+	chain = h.chains[hashKey]
+	h.mutexChains.RUnlock()
 
-	if !ok {
+	if chain == nil {
 		return
 	}
 
-	h.mutexChainMutexes.RLock()
-	chainMutex,ok = h.chainsMutex[hashKey]
-	h.mutexChainMutexed.RULock()
+	h.mutexChainsMutex.RLock()
+	chainMutex = h.chainsMutex[hashKey]
+	h.mutexChainsMutex.RUnlock()
 
-	if !ok {
+	if chainMutex == nil {
 		return
 	}
 
@@ -323,13 +323,12 @@ func (h *HashTable) deleteElement(key string) (deletedBytes int) {
 	chainElement := chain.findElement(key)
 
 	if chainElement != nil {
-		deltaBytes = chainElement.sizeBytes
-		chain.RemoveElement(chainElement)
+		deletedBytes = uint64(chainElement.valueByteSize) + uint64(unsafe.Sizeof(chainElement))
+		chain.deleteElement(chainElement)
 	}
 
-	chainLenght = chain.lenght
-
 	chainMutex.RUnlock()
+	return
 }
 
 func (h *HashTable) lruEviction() {

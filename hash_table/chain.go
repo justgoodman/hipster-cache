@@ -103,7 +103,7 @@ func NewChainElement(key string) *ChainElement {
 	return chainElement
 }
 
-func (c *Chain) deleteElemenet(element *ChainElement) {
+func (c *Chain) deleteElement(element *ChainElement) {
 	if c.firstElement == element {
 		c.firstElement = element.next
 		if element.next != nil {
