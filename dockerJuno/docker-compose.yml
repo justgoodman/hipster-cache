@@ -1,0 +1,53 @@
+consul5:
+   image: consul
+   ports:
+    - "8400:8400"
+    - "8500:8500"
+   volumes:
+    - ./consul/config:/consul/config
+    - ./consul/bin:/consul/bin
+#   links:
+#    - hipster-cache-proxy
+#   command: consul agent -server -bind=127.0.0.1 -client=0.0.0.0
+#   environment:
+#    - CONSUL_LOCAL_CONFIG={"acl_datacenter":"dc1","acl_default_policy":"deny","acl_down_policy":"extend-cache","acl_master_token":"the_one_ring","bootstrap_expect":1,"datacenter":"dc1","data_dir":"/usr/local/bin/consul.d/data","server":true} 
+hipster_cache5:
+   image: golang:1.7 
+   ports: 
+    - "4000:4000"
+    - "4003:4003"
+   command: sleep 100000
+   volumes:
+    - /Users/Jack/PhpstormProjects/go/src/hipster-cache:/go/src/hipster-cache
+   links:
+    - consul5
+hipster-cache-proxy4:
+   image: golang:1.7 
+   ports: 
+    - "4001:4001"
+    - "4002:4002"
+    - "4004:4004"
+   command: sleep 100000
+   volumes:
+    - /Users/Jack/PhpstormProjects/go/src/hipster-cache-proxy:/go/src/hipster-cache-proxy
+   links:
+    - consul5
+    - hipster_cache5
+prometheus2:
+   image: prom/prometheus
+   volumes:
+    - ./prometheus:/etc/prometheus
+   ports:
+    - "9090:9090"
+   links:
+    - hipster_cache5
+    - hipster-cache-proxy4
+    - consul5
+grafana:
+   image: grafana/grafana
+   ports:
+     - "3001:3000"
+   links:
+     - prometheus2
+   environment: 
+     - GF_SERVER_ROOT_URL=http://grafana.net

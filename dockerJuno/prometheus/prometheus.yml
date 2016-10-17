@@ -1,0 +1,45 @@
+# my global config
+global:
+  scrape_interval:     15s
+  evaluation_interval: 30s
+  # scrape_timeout is set to the global default (10s).
+
+  external_labels:
+    monitor: codelab
+    foo:     bar
+
+scrape_configs:
+- job_name: prometheus
+
+  honor_labels: true
+  # scrape_interval is defined by the configured global (15s).
+  # scrape_timeout is defined by the global default (10s).
+
+  # metrics_path defaults to '/metrics'
+  # scheme defaults to 'http'.
+
+  target_groups:
+  - targets: ['localhost:9090', 'localhost:9191']
+    labels:
+      my:   label
+      your: label
+
+- job_name: 'consul'
+
+  consul_sd_configs:
+  - server:   'consul5:8500'
+    services: ['hipster-cache-metrics','hipster-cache-proxy-metrics']
+
+  relabel_configs:
+  - source_labels: ['__meta_consul_service']
+    regex:         '(.*)'
+    target_label:  'job'
+    replacement:   '$1'
+  - source_labels: ['__meta_consul_node']
+    regex:         '(.*)'
+    target_label:  'instance'
+    replacement:   '$1'
+  - source_labels: ['__meta_consul_tags']
+    regex:         ',(production|canary),'
+    target_label:  'group'
+    replacement:   '$1'
