@@ -10,96 +10,105 @@ import (
 )
 
 type HashTable struct {
-	capacity int64
-	countElements uint64
-        bytesSize uint64
-	maxChainLenght uint64
-	chains []*Chain
-	hashFunction *ComplexStringHash
-	mutexChains sync.RWMutex
-	chainsMutex []*sync.RWMutex
+	capacity         int64
+	countElements    int64
+	bytesSize        int64
+	maxChainLenght   int64
+	chains           []*Chain
+	hashFunction     *ComplexStringHash
+	mutexChains      sync.RWMutex
+	chainsMutex      []*sync.RWMutex
 	mutexChainsMutex sync.RWMutex
-	lruChain *LRUChain
-	// We will use LRU after we acheve this value and we will not use reHaching	
-	maximumBytesSize uint
+	reHashingMutex   sync.RWMutex
+	lruChain         *LRUChain
+	// We will use LRU after we acheve this value and we will not use reHaching
+	maximumBytesSize int64
 
-	countElementsMetric prometheus.Gauge
-	bytesSizeMetric prometheus.Gauge
-        maxChainLenghtMetric prometheus.Gauge
-	responseTimeMetric *prometheus.SummaryVec
-	hitCountMetric prometheus.Counter
-	missCountMetric prometheus.Counter
+	// Coefficient for hash function
+	coefPString int64
+	// Coefficient for hash function
+	coefPInt int64
+
+	countElementsMetric  prometheus.Gauge
+	bytesSizeMetric      prometheus.Gauge
+	maxChainLenghtMetric prometheus.Gauge
+	responseTimeMetric   *prometheus.SummaryVec
+	reHashingTimeMetric  prometheus.Summary
+	hitCountMetric       prometheus.Counter
+	missCountMetric      prometheus.Counter
 }
-
 
 type IBaseOperation interface {
 	GetError() error
 	GetOperationName() string
 }
 
-// For implement get operation for all types data you can implement this interface 
+// For implement get operation for all types data you can implement this interface
 type IGetterValue interface {
-     IBaseOperation
-     GetValue(value interface{})
+	IBaseOperation
+	GetValue(value interface{})
 }
 
 // For implement set operation for all types data you can implemet this interface
 type ISetterValue interface {
-     IBaseOperation
-     SetValue(sourceValue interface{}, newValue interface{}) (valueSizeBytes int)
+	IBaseOperation
+	SetValue(sourceValue interface{}, newValue interface{}) (valueSizeBytes int)
 }
 
-
 const (
-	namespace = "hispter_cache"
+	namespace         = "hispter_cache"
 	maximumLoadFactor = 0.9
 )
 
 func NewHashTable(capacity int64) *HashTable {
 	return &HashTable{
-			capacity: capacity,
-			chains: make([]*Chain,capacity,capacity),
-			chainsMutex: make([]*sync.RWMutex,capacity, capacity),
-		}
+		capacity:    capacity,
+		chains:      make([]*Chain, capacity, capacity),
+		chainsMutex: make([]*sync.RWMutex, capacity, capacity),
+	}
 }
 
 func (h *HashTable) initMerics() {
 	h.countElementsMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-			Name:      "elements_total",
-			Help:      "Count of elements stored in hipster cache",
-			Namespace: namespace,
-		})
-
+		Name:      "elements_total",
+		Help:      "Count of elements stored in hipster cache",
+		Namespace: namespace,
+	})
 
 	h.bytesSizeMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-                        Name:      "bytes_total",
-                        Help:      "Size of cache in bytes",
-                        Namespace: namespace,
-                })
+		Name:      "bytes_total",
+		Help:      "Size of cache in bytes",
+		Namespace: namespace,
+	})
 
 	h.maxChainLenghtMetric = prometheus.NewGauge(prometheus.GaugeOpts{
-                        Name:      "max_chain_lenght_total",
-                        Help:      "Maximum size of chein",
-                        Namespace: namespace,
-                })
+		Name:      "max_chain_lenght_total",
+		Help:      "Maximum size of chein",
+		Namespace: namespace,
+	})
 
 	h.responseTimeMetric = prometheus.NewSummaryVec(prometheus.SummaryOpts{
-			Name:      "response_time_microseconds",
-			Help:      "Cache reponse time",
-			Namespace: namespace,
-		}, []string{"operation","is_error"})
+		Name:      "response_time_microseconds",
+		Help:      "Cache reponse time",
+		Namespace: namespace,
+	}, []string{"operation", "is_error"})
 
+	h.reHashingTimeMetric = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name:      "rehashing_time_microseconds",
+		Help:      "Rehashing duration",
+		Namespace: namespace,
+	})
 	h.hitCountMetric = prometheus.NewCounter(prometheus.CounterOpts{
-                        Name:      "hit_total",
-                        Help:      "Hit count",
-                        Namespace: namespace,
-                })
+		Name:      "hit_total",
+		Help:      "Hit count",
+		Namespace: namespace,
+	})
 
 	h.missCountMetric = prometheus.NewCounter(prometheus.CounterOpts{
-                        Name:      "miss_total",
-                        Help:      "Miss count",
-                        Namespace: namespace,
-                })
+		Name:      "miss_total",
+		Help:      "Miss count",
+		Namespace: namespace,
+	})
 
 }
 
@@ -108,27 +117,26 @@ func getDurationMicroseconds(duration time.Duration) float64 {
 	return float64(duration) / float64(time.Microsecond)
 }
 
-
 func (h *HashTable) SetElement(key string, expDate time.Time, value interface{}, setterValue ISetterValue) *ChainElement {
 	timeStart := time.Now()
 
-	chainElement,hasAdded, chainLenght, deltaBytes := h.setElement(key, expDate, value, setterValue)
+	chainElement, hasAdded, chainLenght, deltaBytes := h.setElement(key, expDate, value, setterValue)
 	if hasAdded {
-		countElements := atomic.AddUint64(&h.countElements,1)
+		countElements := atomic.AddInt64(&h.countElements, 1)
 		h.countElementsMetric.Set(float64(countElements))
 		// Maybe we need reHaching
-		h.reHaching()
+		h.reHashing()
 		h.lruChain.Add(chainElement)
 		h.lruEviction()
 	} else {
 		h.lruChain.MoveToFront(chainElement)
 	}
 
-	bytesSize := atomic.AddUint64(&h.bytesSize,uint64(deltaBytes))
+	bytesSize := atomic.AddInt64(&h.bytesSize, int64(deltaBytes))
 	h.bytesSizeMetric.Set(float64(bytesSize))
-	maxChainLenght := atomic.LoadUint64(&h.maxChainLenght)
-	if maxChainLenght < uint64(chainLenght) {
-		atomic.StoreUint64(&h.maxChainLenght, uint64(chainLenght))
+	maxChainLenght := atomic.LoadInt64(&h.maxChainLenght)
+	if maxChainLenght < int64(chainLenght) {
+		atomic.StoreInt64(&h.maxChainLenght, int64(chainLenght))
 		h.maxChainLenghtMetric.Set(float64(chainLenght))
 	}
 
@@ -138,22 +146,22 @@ func (h *HashTable) SetElement(key string, expDate time.Time, value interface{},
 	return chainElement
 }
 
-
 func boolToString(value bool) string {
 	if value {
 		return "1"
 	}
 	return "0"
 }
+
 // Please don't modificate return value, it is not safe, we need this pointer to elemen for implementation LRU
-func (h *HashTable) GetElement(key string,value interface{}, getterValue IGetterValue) *ChainElement {
+func (h *HashTable) GetElement(key string, value interface{}, getterValue IGetterValue) *ChainElement {
 	timeStart := time.Now()
 
-	isHit,chainElement := h.getElement(key,value, getterValue)
+	isHit, chainElement := h.getElement(key, value, getterValue)
 
 	if chainElement.expDate.Unix() < time.Now().Unix() {
 		isHit = false
-		h.RemoveElement(chainElement)
+		h.removeElement(chainElement)
 	}
 
 	if isHit {
@@ -168,7 +176,7 @@ func (h *HashTable) GetElement(key string,value interface{}, getterValue IGetter
 	return chainElement
 }
 
-func (h *HashTable) RemoveElement(element *ChainElement) (sizeBytes uint64) {
+func (h *HashTable) removeElement(element *ChainElement) (sizeBytes int64) {
 	element.chainMutex.Lock()
 	// We try to delete first element
 	if element.prev == nil {
@@ -186,19 +194,20 @@ func (h *HashTable) RemoveElement(element *ChainElement) (sizeBytes uint64) {
 
 	prevLRU := element.prevLRU
 	nextLRU := element.nextLRU
-	sizeBytes =  uint64(unsafe.Sizeof(element)) + uint64(element.valueByteSize)
+	sizeBytes = int64(unsafe.Sizeof(element)) + int64(element.valueByteSize)
 	element.chainMutex.Unlock()
-	h.lruChain.delete(element,prevLRU,nextLRU)
+	h.lruChain.delete(element, prevLRU, nextLRU)
 	return
 }
 
-
-func (h *HashTable) setElement(key string, expDate time.Time, value interface{},setOperationObject ISetterValue) (chainElement *ChainElement,hasAdded bool, chainLenght int, deltaBytes uint64) {
-       var (
-		chain *Chain
+func (h *HashTable) setElement(key string, expDate time.Time, value interface{}, setOperationObject ISetterValue) (chainElement *ChainElement, hasAdded bool, chainLenght int, deltaBytes int64) {
+	var (
+		chain      *Chain
 		chainMutex *sync.RWMutex
-		ok	bool
 	)
+	h.reHashingMutex.RLock()
+	defer h.reHashingMutex.RUnlock()
+
 	hashKey := h.hashFunction.CalculateHash(key)
 
 	h.mutexChains.RLock()
@@ -207,10 +216,10 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 
 	if chain == nil {
 		chainElement = NewChainElement(key)
-		chainElement.setValue(setOperationObject,value, expDate)
+		chainElement.setValue(setOperationObject, value, expDate)
 		chain := NewChain(chainElement)
 
-		deltaBytes = uint64(chainElement.valueByteSize) + uint64(unsafe.Sizeof(chainElement)) + uint64(unsafe.Sizeof(chain))
+		deltaBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chainElement)) + int64(unsafe.Sizeof(chain))
 		hasAdded = true
 		chainLenght = 1
 
@@ -225,7 +234,6 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	chainMutex = h.chainsMutex[hashKey]
 	h.mutexChainsMutex.RUnlock()
 
-
 	// @Check
 	if chainMutex == nil {
 		chainMutex := &sync.RWMutex{}
@@ -238,14 +246,14 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	chainElement = chain.findElement(key)
 
 	if chainElement != nil {
-		deltaBytes = uint64(chainElement.setValue(setOperationObject,value, expDate))
+		deltaBytes = int64(chainElement.setValue(setOperationObject, value, expDate))
 		hasAdded = false
 	} else {
 		chainElement = NewChainElement(key)
-		chainElement.setValue(setOperationObject,value, expDate)
+		chainElement.setValue(setOperationObject, value, expDate)
 		chain.addElement(chainElement)
 
-		deltaBytes = uint64(chainElement.valueByteSize) + uint64(unsafe.Sizeof(chain)) + uint64(unsafe.Sizeof(chainElement))
+		deltaBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chain)) + int64(unsafe.Sizeof(chainElement))
 		hasAdded = false
 	}
 
@@ -256,13 +264,14 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	return
 }
 
-
-func (h *HashTable) getElement(key string,  value interface{}, getOperationObject IGetterValue) (isHit bool, chainElement *ChainElement) {
-       var (
-		chain *Chain
+func (h *HashTable) getElement(key string, value interface{}, getOperationObject IGetterValue) (isHit bool, chainElement *ChainElement) {
+	var (
+		chain      *Chain
 		chainMutex *sync.RWMutex
-		ok	bool
 	)
+	h.reHashingMutex.RLock()
+	defer h.reHashingMutex.RUnlock()
+
 	hashKey := h.hashFunction.CalculateHash(key)
 
 	h.mutexChains.RLock()
@@ -294,12 +303,14 @@ func (h *HashTable) getElement(key string,  value interface{}, getOperationObjec
 	return
 }
 
-func (h *HashTable) deleteElement(key string) (deletedBytes uint64) {
-       var (
-		chain *Chain
+func (h *HashTable) deleteElement(key string) (deletedBytes int64) {
+	var (
+		chain      *Chain
 		chainMutex *sync.RWMutex
-		ok	bool
 	)
+	h.reHashingMutex.RLock()
+	defer h.reHashingMutex.RUnlock()
+
 	hashKey := h.hashFunction.CalculateHash(key)
 
 	h.mutexChains.RLock()
@@ -323,7 +334,7 @@ func (h *HashTable) deleteElement(key string) (deletedBytes uint64) {
 	chainElement := chain.findElement(key)
 
 	if chainElement != nil {
-		deletedBytes = uint64(chainElement.valueByteSize) + uint64(unsafe.Sizeof(chainElement))
+		deletedBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chainElement))
 		chain.deleteElement(chainElement)
 	}
 
@@ -332,81 +343,83 @@ func (h *HashTable) deleteElement(key string) (deletedBytes uint64) {
 }
 
 func (h *HashTable) lruEviction() {
-	sizeBytes := atomic.LoadUint64(&h.sizeBytes)
-       if h.maximumSizeBytes <= sizeBytes {
+	bytesSize := atomic.LoadInt64(&h.bytesSize)
+	if h.maximumBytesSize <= bytesSize {
 		return
 	}
 
-	// We will free 10% of maximumSizeBytes
-	needFreeSize = sizeBytes - (h.maxumumSizeByte - h.maximumSizeBytes/10)
+	h.reHashingMutex.RLock()
+	defer h.reHashingMutex.RUnlock()
 
-	var freeBytes uint
+	// We will free 10% of maximumSizeBytes
+	needFreeSize := bytesSize - (h.maximumBytesSize - h.maximumBytesSize/10)
+
+	var freeBytes int64
 	var element *ChainElement
-	var countElements int
+	var countElements int64
 	for element = h.lruChain.lastElement; element != nil; element = element.prevLRU {
-		freeBytes += h.deleteElement(element)
+		freeBytes += h.removeElement(element)
 		countElements++
 		if freeBytes >= needFreeSize {
 			break
 		}
 	}
-	atomic.AddUint64(&h.sizeBytes, -1*freeBytes)
-	atomic.AddUint64(&h.countElements, -1*countElements)
+
+	atomic.AddInt64(&h.bytesSize, -1*freeBytes)
+	atomic.AddInt64(&h.countElements, -1*countElements)
 }
 
+func (h *HashTable) reHashing() {
+	countChains := atomic.LoadInt64(&h.capacity)
+	countElements := atomic.LoadInt64(&h.countElements)
+	bytesSize := atomic.LoadInt64(&h.bytesSize)
 
-func (h *HashTable) reHaching() {
-	countChanks := atomic.LoadUint64(&h.capacity)
-	countElements := atomic.LoadUint64(&h.countElements)
-	sizeBytes := atomic.LoadUint64(&h.sizeBytes)
-
-	if countElement/countChanks <= 0.9 {
+	if float64(countElements)/float64(countChains) <= 0.9 {
 		return
 	}
 
-	newSizeBytes := sizeBytes + (nosafe.Sizeof(*Chank) + nosafe.Sizeof(*sync.RWMutex)) * countChanks
+	newBytesSize := bytesSize + (int64(unsafe.Sizeof(&Chain{}))+int64(unsafe.Sizeof(&sync.RWMutex{})))*countChains
 
-	if h.maximumSizeBytes <= newSizeBytes {
+	// If we can't use more memory
+	if h.maximumBytesSize <= newBytesSize {
 		return
 	}
 
-	newCapacity := countChanks*2
-	newChanks := [newCapacity]*Chank
-	newMutexes := [newCapacity]*sync.RWMutex
-	newHashFunction := NewHashFunction()
+	timeStart := time.Now()
+	h.reHashingMutex.Lock()
 
-	h.mutexChain.Lock()
+	newCapacity := countChains * 2
+	newChains := make([]*Chain, newCapacity)
+	newMutexes := make([]*sync.RWMutex, newCapacity)
+	newHashFunction := NewComplexStringHash(newCapacity, h.coefPString, h.coefPInt)
 
-	var chainElement *ChainElement
-	for _, chain := range(h.chainsMutex) {
+	var nextChainElement *ChainElement
+	for _, chain := range h.chains {
 		if chain == nil {
 			continue
 		}
-		for chainElement := chain.FirstElement; chainElement != nill; chainElement = nextChainElement {
+		for chainElement := chain.firstElement; chainElement != nil; chainElement = nextChainElement {
 			nextChainElement = chainElement.next
-			// We will use it element in the new chain
+			// We will use thist element in the new chain
 			chainElement.next = nil
-			h.reHachingAddElement(newChains,newHashFunction,chainElement)
+			h.reHachingAddElement(newChains, newHashFunction, chainElement)
 		}
 	}
 
 	h.capacity = newCapacity
-	h.chainMutexes = newMutexes
-	h.hasFunction = newHashFunction
-	h.sizeBytes = newSizeBytes
+	h.chainsMutex = newMutexes
+	h.hashFunction = newHashFunction
+	h.bytesSize = newBytesSize
 
-	h.mutexChain.Unlock()
+	h.reHashingTimeMetric.Observe(getDurationMicroseconds(time.Since(timeStart)))
+	h.bytesSizeMetric.Set(float64(newBytesSize))
 
-	// AddNewMetic
-	h.rehashingCountMetric.Inc()
-	h.countBytesMetric.Set(newSizeBytes)
+	h.reHashingMutex.Unlock()
 }
 
-func (h *HashTable) reHachingAddElement(chains []*Chain, hashFunction *hashFunction, chainElement *ChainElement) {
-       var (
+func (h *HashTable) reHachingAddElement(chains []*Chain, hashFunction *ComplexStringHash, chainElement *ChainElement) {
+	var (
 		chain *Chain
-		chainMutex *sync.RWMutex
-		ok	bool
 	)
 	hashKey := hashFunction.CalculateHash(chainElement.key)
 
@@ -418,5 +431,5 @@ func (h *HashTable) reHachingAddElement(chains []*Chain, hashFunction *hashFunct
 		return
 	}
 
-	chain.AddElement(chainElement)
+	chain.addElement(chainElement)
 }
