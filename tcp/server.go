@@ -13,10 +13,10 @@ type CacheServer struct {
 	port      int
 	logger    common.ILogger
 	listener  *net.TCPListener
-	hashTable *hash.HashTable
+	hashTable *hash_table.HashTable
 }
 
-func NewCacheServer(port int, logger common.ILogger, hashTable *hash.HashTable) *CacheServer {
+func NewCacheServer(hashTable *hash_table.HashTable, logger common.ILogger, port int) *CacheServer {
 	return &CacheServer{port: port, logger: logger, hashTable: hashTable}
 }
 

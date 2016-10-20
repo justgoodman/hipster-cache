@@ -11,6 +11,9 @@ type Config struct {
 	ServerPort    int    `json:"server_port"`
 	Address       string `json:"address"`
 	ConsulAddress string `json:"consul_address"`
+	MaxBytesSize  int64  `json:"maximum_bytes_size"`
+	MaxLenghtKey  int64  `json:maximum_lenght_key`
+	InitCapacity  int64  `json:init_capacity`
 }
 
 func NewConfig() *Config {

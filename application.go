@@ -9,6 +9,7 @@ import (
 
 	"hipster-cache/common"
 	"hipster-cache/config"
+	"hipster-cache/hash_table"
 	"hipster-cache/tcp"
 )
 
@@ -17,39 +18,44 @@ type Application struct {
 	logger      common.ILogger
 	consul      *consulapi.Client
 	cacheServer *tcp.CacheServer
+	hashTable   *hash_table.HashTable
 }
 
 func NewApplication(config *config.Config, logger common.ILogger) *Application {
 	return &Application{config: config, logger: logger}
 }
 
-func (this *Application) Init() error {
+func (a *Application) Init() error {
 	fmt.Printf("\n startInit")
-	err := this.initDiscovery()
+	err := a.initDiscovery()
 	if err != nil {
 		return err
 	}
 
-	err = this.initTCP()
+	err = a.initTCP()
 	if err != nil {
 		return err
 	}
-	this.initRouting()
+	a.initRouting()
 	return nil
 }
 
-func (this *Application) initRouting() {
+func (a *Application) initRouting() {
 	// Handler for Prometheus
 	http.Handle("/metrics", prometheus.Handler())
 }
 
-func (this *Application) Run() error {
-	go http.ListenAndServe(fmt.Sprintf(":%d", this.config.MetricsPort), nil)
-	this.cacheServer.Run()
+func (a *Application) iniHashTable() {
+	a.hashTable = hash_table.NewHashTable(a.config.InitCapacity, a.config.MaxLenghtKey, a.config.MaxBytesSize)
+}
+
+func (a *Application) Run() error {
+	go http.ListenAndServe(fmt.Sprintf(":%d", a.config.MetricsPort), nil)
+	a.cacheServer.Run()
 	return nil
 }
 
-func (this *Application) registerService(catalog *consulapi.Catalog, id string, serviceName string, port int) error {
+func (a *Application) registerService(catalog *consulapi.Catalog, id string, serviceName string, port int) error {
 	service := &consulapi.AgentService{
 		ID:      id,
 		Service: serviceName,
@@ -59,48 +65,48 @@ func (this *Application) registerService(catalog *consulapi.Catalog, id string, 
 	reg := &consulapi.CatalogRegistration{
 		Datacenter: "dc1",
 		Node:       id,
-		Address:    this.config.Address,
+		Address:    a.config.Address,
 		Service:    service,
 	}
 	_, err := catalog.Register(reg, nil)
 	return err
 }
 
-func (this *Application) initDiscovery() error {
+func (a *Application) initDiscovery() error {
 	var err error
 	config := consulapi.DefaultConfig()
-	config.Address = this.config.ConsulAddress
-	this.consul, err = consulapi.NewClient(config)
+	config.Address = a.config.ConsulAddress
+	a.consul, err = consulapi.NewClient(config)
 	if err != nil {
 		return err
 	}
 
-	catalog := this.consul.Catalog()
+	catalog := a.consul.Catalog()
 
 	// Register for Applications
-	err = this.registerService(catalog, "cache1", "hipster-cache", this.config.ServerPort)
+	err = a.registerService(catalog, "cache1", "hipster-cache", a.config.ServerPort)
 
 	if err != nil {
 		return err
 	}
 
 	// Register for Prometheus
-	return this.registerService(catalog, "cache1-mertics", "hipster-cache-metrics", this.config.MetricsPort)
+	return a.registerService(catalog, "cache1-mertics", "hipster-cache-metrics", a.config.MetricsPort)
 }
 
-func (this *Application) initTCP() error {
-	this.cacheServer = tcp.NewCacheServer(this.config.ServerPort, this.logger)
-	return this.cacheServer.InitConnection()
+func (a *Application) initTCP() error {
+	a.cacheServer = tcp.NewCacheServer(a.hashTable, a.logger, a.config.ServerPort)
+	return a.cacheServer.InitConnection()
 	/*
 		fmt.Printf("TCP IP")
 		ips,err := net.LookupIP("consul6")
 		fmt.Printf("\n Finish \n")
 		if err != nil {
-			this.logger.Errorf(`Error get IP:"%s"`, err)
+			a.logger.Errorf(`Error get IP:"%s"`, err)
 			return
 		}
 		if len(ips) == 0 {
-		  this.logger.Errorf(`Error get IP`)
+		  a.logger.Errorf(`Error get IP`)
 		  return
 		}
 	*/

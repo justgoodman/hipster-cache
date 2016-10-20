@@ -1,6 +1,8 @@
 package hash_table
 
 import (
+	"math"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -22,7 +24,7 @@ type HashTable struct {
 	reHashingMutex   sync.RWMutex
 	lruChain         *LRUChain
 	// We will use LRU after we acheve this value and we will not use reHaching
-	maximumBytesSize int64
+	maxBytesSize int64
 
 	// Coefficient for hash function
 	coefPString int64
@@ -60,11 +62,17 @@ const (
 	maximumLoadFactor = 0.9
 )
 
-func NewHashTable(capacity int64) *HashTable {
+func NewHashTable(initCapacity int64, maxKeyLenght int64, maxBytesSize int64) *HashTable {
+	sizeOfOneChain := int64(unsafe.Sizeof(&Chain{})) + int64(unsafe.Sizeof(&ChainElement{})) + int64(unsafe.Sizeof(Chain{}))
+	maxCapacity := int64(maxBytesSize / sizeOfOneChain)
+	// CoefP must be more than maximCapacity*maxKeyLenght
+	coefP := maxCapacity*maxKeyLenght + rand.Int63n(math.MaxInt64-maxCapacity*maxKeyLenght)
 	return &HashTable{
-		capacity:    capacity,
-		chains:      make([]*Chain, capacity, capacity),
-		chainsMutex: make([]*sync.RWMutex, capacity, capacity),
+		capacity:     initCapacity,
+		maxBytesSize: maxBytesSize,
+		chains:       make([]*Chain, initCapacity, initCapacity),
+		chainsMutex:  make([]*sync.RWMutex, initCapacity, initCapacity),
+		hashFunction: NewComplexStringHash(initCapacity, coefP, coefP),
 	}
 }
 
@@ -344,7 +352,7 @@ func (h *HashTable) deleteElement(key string) (deletedBytes int64) {
 
 func (h *HashTable) lruEviction() {
 	bytesSize := atomic.LoadInt64(&h.bytesSize)
-	if h.maximumBytesSize <= bytesSize {
+	if h.maxBytesSize <= bytesSize {
 		return
 	}
 
@@ -352,7 +360,7 @@ func (h *HashTable) lruEviction() {
 	defer h.reHashingMutex.RUnlock()
 
 	// We will free 10% of maximumSizeBytes
-	needFreeSize := bytesSize - (h.maximumBytesSize - h.maximumBytesSize/10)
+	needFreeSize := bytesSize - (h.maxBytesSize - h.maxBytesSize/10)
 
 	var freeBytes int64
 	var element *ChainElement
@@ -381,7 +389,7 @@ func (h *HashTable) reHashing() {
 	newBytesSize := bytesSize + (int64(unsafe.Sizeof(&Chain{}))+int64(unsafe.Sizeof(&sync.RWMutex{})))*countChains
 
 	// If we can't use more memory
-	if h.maximumBytesSize <= newBytesSize {
+	if h.maxBytesSize <= newBytesSize {
 		return
 	}
 
