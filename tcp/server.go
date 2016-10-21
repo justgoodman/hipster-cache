@@ -3,10 +3,11 @@ package tcp
 import (
 	"fmt"
 	"net"
-	//	"time"
+	"strings"
 
 	"hipster-cache/common"
 	"hipster-cache/hash_table"
+	"hipster-cache/hash_table/value_type"
 )
 
 type CacheServer struct {
@@ -66,9 +67,11 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 		// get and replace
 		// split раз и split
 		// GET nonexisting
-		command = command[0 : len(command)-1]
 		fmt.Printf(`Response "%s"`, command)
-		response := s.getResponse(command)
+		response,err := s.getResponse(command)
+		if err !=  nil {
+			response = err.Error()
+		}
 		conn.Write([]byte(response + "\n"))
 		//	time.Sleep(time.Second * 10)
 		//		conn.Close()
@@ -77,13 +80,22 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 	return
 }
 
-func (s *CacheServer) getResponse(command string) string {
+func (s *CacheServer) getResponse(command string) (string,error) {
 	clientMessage := NewClientMessage()
-	err := clientMessage.Init(command)
-	if err != nil {
-		return err.Error()
+	if err := clientMessage.Init(command); err != nil {
+		return "",err
 	}
-	return "No error"
+
+	switch clientMessage.command {
+		case "GET":
+			if len(clientMessage.params) != 2 {
+				return "",fmt.Errorf("Error: incorrect parametes count")
+			}
+			GetStringOperation := value_type.NewGetStringOperation()
+			s.hashTable.GetElement(clientMessage.params[0],clientMessage.params[1], GetStringOperation)
+			return GetStringOperation.GetResult()
+	}
+	return "No error",nil
 }
 
 func NewClientMessage() *ClientMessage {
@@ -99,7 +111,7 @@ func (m *ClientMessage) Init(value string) error {
 	if len(words) < 2 {
 		return fmt.Errorf(`You don't set any parameters`)
 	}
-	m.command = words[0]
+	m.command = strings.ToUpper(words[0])
 	m.params = words[1:]
 	return nil
 }

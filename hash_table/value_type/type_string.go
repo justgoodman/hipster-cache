@@ -1,36 +1,57 @@
 package value_type
 
-import(
+import (
 	"fmt"
 	"unsafe"
 )
 
-type OperationSetString struct {
-	Err string
+const (
+	GetStringCmdName = "GET"
+	SetStringCmdName = "SET"
+)
+
+type SetStringOperation struct {
+	baseOperation
 }
 
-func (this *OperationSetString) SetValue(sourveValue, value interface{}) (valueSizeBytes int) {
-	 switch v := value.(type) {
-                case string:
-                        byteSize += unsafe.Sizeof(sourvevalue) + len(v)
-		default:
-			this.Err := fmt.Sprintf(`Incorrect value type: type is not string`)
-			return
-        }
-	sourceValue := value
+func NewSetStringOperation() *SetStringOperation {
+	return &SetStringOperation{baseOperation{commandName: SetStringCmdName}}
 }
 
-type OperationGetString struct {
-	value string
-	Err string
+func (o *SetStringOperation) GetResult() error {
+	return o.err
 }
 
-
-func (this *OperationGetString) GetValue(value interface{}) {
+func (o *SetStringOperation) SetValue(sourceValue, value interface{}) (valueSizeBytes int) {
 	switch v := value.(type) {
-                case string:
-                       this.value = value
-                default:
-                        this.Err := fmt.Sprintf(`Incorrect value type: type is not string`)
-        }
+	case string:
+		valueSizeBytes = int(unsafe.Sizeof(sourceValue)) + len(v)
+	default:
+		o.err = fmt.Errorf(`Incorrect value type: type is not string`)
+		return
+	}
+	sourceValue = value
+	return
+}
+
+type GetStringOperation struct {
+	baseOperation
+	value string
+}
+
+func (o *GetStringOperation) GetResult() (string, error) {
+	return o.value, o.err
+}
+
+func NewGetStringOperation() *GetStringOperation {
+	return &GetStringOperation{baseOperation: baseOperation{commandName: GetStringCmdName}}
+}
+
+func (o *GetStringOperation) GetValue(value interface{}) {
+	switch v := value.(type) {
+	case string:
+		o.value = v
+	default:
+		o.err = fmt.Errorf(`Incorrect value type: type is not string`)
+	}
 }

@@ -42,7 +42,7 @@ type HashTable struct {
 
 type IBaseOperation interface {
 	GetError() error
-	GetOperationName() string
+	GetCommandName() string
 }
 
 // For implement get operation for all types data you can implement this interface
@@ -148,7 +148,7 @@ func (h *HashTable) SetElement(key string, expDate time.Time, value interface{},
 		h.maxChainLenghtMetric.Set(float64(chainLenght))
 	}
 
-	responseMetric := h.responseTimeMetric.WithLabelValues(setterValue.GetOperationName(), boolToString(setterValue.GetError() != nil))
+	responseMetric := h.responseTimeMetric.WithLabelValues(setterValue.GetCommandName(), boolToString(setterValue.GetError() != nil))
 	responseMetric.Observe(getDurationMicroseconds(time.Since(timeStart)))
 
 	return chainElement
@@ -162,7 +162,7 @@ func boolToString(value bool) string {
 }
 
 // Please don't modificate return value, it is not safe, we need this pointer to elemen for implementation LRU
-func (h *HashTable) GetElement(key string, value interface{}, getterValue IGetterValue) *ChainElement {
+func (h *HashTable) GetElement(key string, value interface{}, getterValue IGetterValue) {
 	timeStart := time.Now()
 
 	isHit, chainElement := h.getElement(key, value, getterValue)
@@ -180,8 +180,7 @@ func (h *HashTable) GetElement(key string, value interface{}, getterValue IGette
 
 	responseMetric := h.responseTimeMetric.WithLabelValues("get")
 	responseMetric.Observe(getDurationMicroseconds(time.Since(timeStart)))
-
-	return chainElement
+	return
 }
 
 func (h *HashTable) removeElement(element *ChainElement) (sizeBytes int64) {
