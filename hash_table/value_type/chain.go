@@ -1,27 +1,30 @@
 package value_type
 
-/*
+import (
+	"unsafe"
+)
+
 type Chain struct {
         firstElement *ChainElement
         lastElement *ChainElement
         countElements int
-        byteSize int
+        bytesSize int
 }
 
 type ChainElement struct {
-        valueByteSize int
+        bytesSize int
         value string
+	next *ChainElement
 }
 
 func NewChain(firstElement *ChainElement) *Chain {
         chain := &Chain{firstElement: firstElement, lastElement: firstElement, countElements: 1}
-//        valueSizeBytes := unsafe.Sizeof(chain) + element.sizeBytes
 	return chain
 }
 
 func NewChainElement(value string) *ChainElement {
         chainElement := &ChainElement{value: value}
-        chainElement.byteSize = unsage.Sizeof(chainElement) + len(value)
+        chainElement.bytesSize = int(unsafe.Sizeof(chainElement)) + len(value)
         return chainElement
 }
 
@@ -33,6 +36,7 @@ func (this *Chain) findElement(index int) *ChainElement {
                 }
                 i += 1
         }
+	return nil
 }
 
 func (this *Chain) GetRangeValues(indexStart,indexEnd int) []string {
@@ -53,7 +57,5 @@ func (this *Chain) GetRangeValues(indexStart,indexEnd int) []string {
 func (this *Chain) addElement(element *ChainElement) {
         this.lastElement.next = element
         this.lastElement = element
-        this.lenght += 1
+        this.countElements += 1
 }
-
-*/

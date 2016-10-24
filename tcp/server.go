@@ -3,9 +3,9 @@ package tcp
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 
 	"hipster-cache/common"
 	"hipster-cache/hash_table"
@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ttlSeconds = "EX"
+	ttlSeconds      = "EX"
 	ttlMilliseconds = "PX"
 )
 
@@ -75,8 +75,8 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 		// split раз и split
 		// GET nonexisting
 		fmt.Printf(`Response "%s"`, command)
-		response,err := s.getResponse(command)
-		if err !=  nil {
+		response, err := s.getResponse(command)
+		if err != nil {
 			response = err.Error()
 		}
 		conn.Write([]byte(response + "\n"))
@@ -87,46 +87,92 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 	return
 }
 
-func (s *CacheServer) getResponse(command string) (string,error) {
+func (s *CacheServer) getResponse(command string) (string, error) {
 	clientMessage := NewClientMessage()
 	if err := clientMessage.Init(command); err != nil {
-		return "",err
+		return "", err
 	}
 
 	switch clientMessage.command {
-		case value_type.GetStringCmdName:
-			if len(clientMessage.params) != 1 {
-				return "",fmt.Errorf(`Error: incorrect parametes count need "1", was sended "%d"`,len(clientMessage.params))
+	case value_type.GetStringCmdName:
+		if len(clientMessage.params) != 1 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "1", was sended "%d"`, len(clientMessage.params))
+		}
+		getStringOperation := value_type.NewGetStringOperation()
+		s.hashTable.GetElement(clientMessage.params[0], getStringOperation)
+		return getStringOperation.GetResult()
+	case value_type.SetStringCmdName:
+		if len(clientMessage.params) != 2 && len(clientMessage.params) != 4 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "2 or 4", was sended "%d"`, len(clientMessage.params))
+		}
+		var ttl time.Duration
+		// This command with TTL
+		if len(clientMessage.params) == 4 {
+			cmdDuration, _ := strconv.Atoi(clientMessage.params[3])
+			if cmdDuration <= 0 {
+				return "", fmt.Errorf(`Error: incorrect ttl time, ttl duration must me more  or equal 0, was sended "%s"`, clientMessage.params[3])
 			}
-			getStringOperation := value_type.NewGetStringOperation()
-			s.hashTable.GetElement(clientMessage.params[0], getStringOperation)
-			return getStringOperation.GetResult()
-		case value_type.SetStringCmdName:
-			if len(clientMessage.params) != 2 && len(clientMessage.params) != 4 {
-				return "",fmt.Errorf(`Error: incorrect parametes count need "2 or 4", was sended "%d"`,len(clientMessage.params))
+			switch clientMessage.params[2] {
+			case ttlSeconds:
+				ttl = time.Second * time.Duration(cmdDuration)
+			case ttlMilliseconds:
+				ttl = time.Millisecond * time.Duration(cmdDuration)
+			default:
+				return "", fmt.Errorf(`Error: incorrect parameter name, must be "%s" or "%s", was sended "%s"r`, ttlSeconds, ttlMilliseconds, clientMessage.params[2])
 			}
-			var ttl time.Duration
-			// This command with TTL
-			if len(clientMessage.params) == 4 {
-				cmdDuration,_ := strconv.Atoi(clientMessage.params[3])
-				if cmdDuration <= 0 {
-					return "", fmt.Errorf(`Error: incorrect ttl time, ttl duration must me more  or equal 0, was sended "%s"`,clientMessage.params[3])
-				}
-				switch clientMessage.params[2] {
-					case ttlSeconds:
-						ttl = time.Second * time.Duration(cmdDuration)
-					case ttlMilliseconds:
-						ttl = time.Millisecond * time.Duration(cmdDuration)
-					default:
-						return "", fmt.Errorf(`Error: incorrect parameter name, must be "%s" or "%s", was sended "%s"r`,ttlSeconds,ttlMilliseconds, clientMessage.params[2])
-				}
-			}
-			setStringOperation := value_type.NewSetStringOperation()
-			//time.Now().Unix() + int64(10000)
-			s.hashTable.SetElement(clientMessage.params[0], ttl, interface{}(clientMessage.params[1]), setStringOperation)
-			return setStringOperation.GetResult()
+		}
+		setStringOperation := value_type.NewSetStringOperation()
+		//time.Now().Unix() + int64(10000)
+		s.hashTable.SetElement(clientMessage.params[0], ttl, interface{}(clientMessage.params[1]), setStringOperation)
+		return setStringOperation.GetResult()
+	case value_type.PushListCmdName:
+		if len(clientMessage.params) != 2 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "2", was sended "%d"`, len(clientMessage.params))
+		}
+
+		pushListOperation := value_type.NewPushListOperation()
+		s.hashTable.SetElement(clientMessage.params[0], 0, interface{}(clientMessage.params[1]), pushListOperation)
+		return pushListOperation.GetResult()
+	case value_type.RangeListCmdName:
+		if len(clientMessage.params) != 3 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "3", was sended "%d"`, len(clientMessage.params))
+		}
+		indexStart, err := strconv.Atoi(clientMessage.params[1])
+		if err != nil {
+			return "", fmt.Errorf(`Error: second parameter must be integer, was sended "%d"`, clientMessage.params[1])
+		}
+
+		indexEnd, err := strconv.Atoi(clientMessage.params[2])
+		if err != nil {
+			return "", fmt.Errorf(`Error: third parameter must be integer, was sended "%d"`, clientMessage.params[1])
+		}
+
+		rangeListOperation := value_type.NewRangeListOperation(indexStart,indexEnd)
+		s.hashTable.GetElement(clientMessage.params[0], rangeListOperation)
+		return rangeListOperation.GetResult()
+	case value_type.LenghtListCmdName:
+		if len(clientMessage.params) != 1 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "1", was sended "%d"`, len(clientMessage.params))
+		}
+
+		lenghtListOperation := value_type.NewLenghtListOperation()
+		s.hashTable.GetElement(clientMessage.params[0], lenghtListOperation)
+		return lenghtListOperation.GetResult()
+	case value_type.SetListCmdName:
+		if len(clientMessage.params) != 3 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "3", was sended "%d"`, len(clientMessage.params))
+		}
+		index, err := strconv.Atoi(clientMessage.params[1])
+		if err != nil {
+			return "", fmt.Errorf(`Error: second parameter must be integer, was sended "%d"`, clientMessage.params[1])
+		}
+
+		setListOperation := value_type.NewSetListOperation(index)
+
+		s.hashTable.SetElement(clientMessage.params[0], 0, interface{}(clientMessage.params[2]), setListOperation)
+		return setListOperation.GetResult()
 	}
-	return "No error",nil
+	return "No error", nil
 }
 
 func NewClientMessage() *ClientMessage {

@@ -1,101 +1,166 @@
 package value_type
-/*
 
 import (
 	"fmt"
 	"unsafe"
+	"strconv"
 )
 
-type ListPushOperation struct {
+const (
+	PushListCmdName = "LPUSH"
+	RangeListCmdName = "LRANGE"
+	SetListCmdName = "LSET"
+	LenghtListCmdName = "LLEN"
+)
+
+type PushListOperation struct {
+	baseOperation
 	elementIndex int
 }
 
-func (this *ListPushOperation) SetValue(sourceValue, value interface{}) (valueSizeBytes int) {
-	var stringValue string
-	switch setVal :=  value.(type) {
+func NewPushListOperation() *PushListOperation {
+	return &PushListOperation{baseOperation: baseOperation{commandName: PushListCmdName}}
+}
+
+func (l *PushListOperation) SetValue(sourceValue *interface{}, value interface{}) (valueSizeBytes int) { var stringValue string
+	switch setValue :=  value.(type) {
 		case string:
 			stringValue = setValue
 		default:
-			this.Err = fmt.Sprintf("Error: list value in not the string")
+			l.err = fmt.Errorf("Error: list value in not the string")
 			return
 	}
-	switch chain := sourceValue.(type) {
+
+	element := NewChainElement(stringValue)
+	switch chain := (*sourceValue).(type) {
 		case *Chain:
-			element := NewChainElement(stringValue)
 			chain.addElement(element)
-			chain.sizeBytes += elem.sizeBytes
-			this.elementIndex = chain.lenght - 1
+			chain.bytesSize += element.bytesSize
+			l.elementIndex = chain.countElements - 1
 
-			valueSizeBytes = chain.sizeBytes
-		case nil:
-			element := NewChainElement(stringValue)
-			chain = NewChain(element)
-			this.elementIndex = 0
+			valueSizeBytes = chain.bytesSize
+		// It is like nil, default value
+		case string:
+			if chain != "" {
+				l.err = fmt.Errorf("Error: list type is string")
+			}
+			newChain := NewChain(element)
+			l.elementIndex = 0
+			*sourceValue = interface{}(newChain)
 
-			valueSizeBytes := unsafe.Sizeof(chain) + element.sizeBytes
+			valueSizeBytes = int(unsafe.Sizeof(chain)) + element.bytesSize
 		default:
-			this.Err = fmt.Sprintf("Error: list type in not the Chain")
+			l.err = fmt.Errorf("Error: list type is not the Chain")
 	}
+	return
 }
 
-type ListLenghtOperation struct {
-	Length int
-	Err error
+func (o *PushListOperation) GetResult() (string,error) {
+	if o.err == nil {
+		return "OK",o.err }
+	return "",o.err
 }
 
-func (this *ListLenghtOperation) GetValue(value interface{}) {
+
+
+type LenghtListOperation struct {
+	baseOperation
+	Lenght int
+}
+
+func NewLenghtListOperation() *LenghtListOperation {
+	return  &LenghtListOperation{baseOperation: baseOperation{commandName: LenghtListCmdName}}
+}
+
+func (l *LenghtListOperation) GetResult() (string,error) {
+	return strconv.Itoa(l.Lenght), l.err
+}
+
+func (l *LenghtListOperation) GetValue(value interface{}) {
 	switch chain := value.(type) {
 		case *Chain:
-			this.Lenght = chain.Lenght
+			l.Lenght = chain.countElements
 		default:
-			this.Err = fmt.Errorf("Error: list type in not the Chain")
+			l.err = fmt.Errorf("Error: list type in not the Chain")
 	}
 }
 
-type ListRangeOperation struct {
-	IndexStart int
-	IndexEnd int
+type RangeListOperation struct {
+	baseOperation
+	indexStart int
+	indexEnd int
 	Values []string
-	Err error
 }
 
-func (this *ListRangeOperation) GetValue(value interface{}) {
+func NewRangeListOperation(indexStart,indexEnd int) *RangeListOperation {
+	return &RangeListOperation{baseOperation: baseOperation{commandName: RangeListCmdName},indexStart: indexStart, indexEnd: indexEnd,}
+}
+
+func (l *RangeListOperation) GetValue(value interface{}) {
 	switch chain := value.(type) {
 		case *Chain:
-			this.Values = chain.GetRangeValues(this.IndexStart, this.IndexEnd)
+			l.Values = chain.GetRangeValues(l.indexStart, l.indexEnd)
 		default:
-			this.Err = fmt.Errorf("Error: list type in not the Chain")
+			l.err = fmt.Errorf("Error: list type in not the Chain")
 	}
 }
 
-type ListSetOperation struct {
-	Index int
-	Err string
+func (l *RangeListOperation) GetResult() (string,error) {
+	result := ""
+	isFirst := true
+	for _, value := range l.Values {
+		if isFirst {
+			isFirst = false
+		} else {
+		result += "\n"
+		}
+		result +=  fmt.Sprintf(`"%s"`,value)
+	}
+	if len(l.Values) == 0 {
+		result = "(empty list)"
+	}
+	return result, l.err
 }
 
-func (this *ListSetOperation) SetValue(sourceValue,value interface{}) (valueSizeBytes int) {
+type SetListOperation struct {
+	baseOperation
+	index int
+}
+
+func NewSetListOperation(index int) *SetListOperation {
+	return &SetListOperation{baseOperation: baseOperation{commandName: SetListCmdName}, index: index,}
+}
+
+func (l *SetListOperation) SetValue(sourceValue *interface{},value interface{}) (valueSizeBytes int) {
 	var stringValue string
-	switch setVal :=  value.(type) {
+	switch setValue :=  value.(type) {
 		case string:
 			stringValue = setValue
 		default:
-			this.Err = fmt.Sprintf("Error: list value in not the string")
+			l.err = fmt.Errorf("Error: list value in not the string")
 			return
 	}
-	switch chain := sourceValue.(type) {
+
+	switch chain := (*sourceValue).(type) {
 		case *Chain:
-			element = chain.FindElement(this.Index)
+			element := chain.findElement(l.index)
 			if element == nil {
-				this.Err = fmt.Errorf(`Index "%d" not found in List`)
+				l.err = fmt.Errorf(`Error: Index "%d" not found in List`, l.index)
 			        return
 			}
 			deltaBytes := len(stringValue) - len(element.value)
 			element.value = stringValue
-			chain.byteSize -=  deltaBytes
+			chain.bytesSize -=  deltaBytes
 
-			valueSizeBytes = chain.byteSize
+			valueSizeBytes = chain.bytesSize
 		default:
-			this.Err = fmt.Errorf("Error: list type in not the Chain")
+			l.err = fmt.Errorf("Error: list type in not the Chain")
 	}
+	return
 }
-*/
+
+func (l *SetListOperation) GetResult() (string,error) {
+	if l.err == nil {
+		return "OK",l.err }
+	return "",l.err
+}
