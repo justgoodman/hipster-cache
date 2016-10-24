@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 	"unsafe"
+	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -27,9 +28,9 @@ type HashTable struct {
 	maxBytesSize int64
 
 	// Coefficient for hash function
-	coefPString int64
+	coefPString uint64
 	// Coefficient for hash function
-	coefPInt int64
+	coefPInt uint64
 
 	countElementsMetric  prometheus.Gauge
 	bytesSizeMetric      prometheus.Gauge
@@ -54,7 +55,7 @@ type IGetterValue interface {
 // For implement set operation for all types data you can implemet this interface
 type ISetterValue interface {
 	IBaseOperation
-	SetValue(sourceValue interface{}, newValue interface{}) (valueSizeBytes int)
+	SetValue(sourceValue *interface{}, newValue interface{}) (valueSizeBytes int)
 }
 
 const (
@@ -66,17 +67,20 @@ func NewHashTable(initCapacity int64, maxKeyLenght int64, maxBytesSize int64) *H
 	sizeOfOneChain := int64(unsafe.Sizeof(&Chain{})) + int64(unsafe.Sizeof(&ChainElement{})) + int64(unsafe.Sizeof(Chain{}))
 	maxCapacity := int64(maxBytesSize / sizeOfOneChain)
 	// CoefP must be more than maximCapacity*maxKeyLenght
-	coefP := maxCapacity*maxKeyLenght + rand.Int63n(math.MaxInt64-maxCapacity*maxKeyLenght)
+	coefP := uint64(maxCapacity*maxKeyLenght + (rand.Int63n(math.MaxInt64-int64(maxCapacity*maxKeyLenght))))
 	return &HashTable{
 		capacity:     initCapacity,
 		maxBytesSize: maxBytesSize,
 		chains:       make([]*Chain, initCapacity, initCapacity),
 		chainsMutex:  make([]*sync.RWMutex, initCapacity, initCapacity),
-		hashFunction: NewComplexStringHash(initCapacity, coefP, coefP),
+		hashFunction: NewComplexStringHash(uint64(initCapacity), coefP, coefP),
+		coefPString: coefP,
+		coefPInt: coefP,
+		lruChain: NewLRUChain(),
 	}
 }
 
-func (h *HashTable) initMerics() {
+func (h *HashTable) InitMetrics() {
 	h.countElementsMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name:      "elements_total",
 		Help:      "Count of elements stored in hipster cache",
@@ -126,6 +130,7 @@ func getDurationMicroseconds(duration time.Duration) float64 {
 }
 
 func (h *HashTable) SetElement(key string, expDate time.Time, value interface{}, setterValue ISetterValue) *ChainElement {
+	fmt.Printf("\n Set element:%#v", value)
 	timeStart := time.Now()
 
 	chainElement, hasAdded, chainLenght, deltaBytes := h.setElement(key, expDate, value, setterValue)
@@ -162,11 +167,16 @@ func boolToString(value bool) string {
 }
 
 // Please don't modificate return value, it is not safe, we need this pointer to elemen for implementation LRU
-func (h *HashTable) GetElement(key string, value interface{}, getterValue IGetterValue) {
+func (h *HashTable) GetElement(key string, getterValue IGetterValue) {
 	timeStart := time.Now()
 
-	isHit, chainElement := h.getElement(key, value, getterValue)
+	isHit, chainElement := h.getElement(key, getterValue)
 
+	if !isHit {
+		return
+	}
+
+	fmt.Printf("\n Find Element:%#v \n", chainElement)
 	if chainElement.expDate.Unix() < time.Now().Unix() {
 		isHit = false
 		h.removeElement(chainElement)
@@ -178,7 +188,7 @@ func (h *HashTable) GetElement(key string, value interface{}, getterValue IGette
 		h.missCountMetric.Inc()
 	}
 
-	responseMetric := h.responseTimeMetric.WithLabelValues("get")
+	responseMetric := h.responseTimeMetric.WithLabelValues("get", boolToString(getterValue.GetError() != nil))
 	responseMetric.Observe(getDurationMicroseconds(time.Since(timeStart)))
 	return
 }
@@ -215,16 +225,21 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	h.reHashingMutex.RLock()
 	defer h.reHashingMutex.RUnlock()
 
+
 	hashKey := h.hashFunction.CalculateHash(key)
 
+	fmt.Printf("\n SET hash key:%d", hashKey)
 	h.mutexChains.RLock()
 	chain = h.chains[hashKey]
 	h.mutexChains.RUnlock()
 
 	if chain == nil {
+		chain := NewChain(&sync.RWMutex{})
+
 		chainElement = NewChainElement(key)
 		chainElement.setValue(setOperationObject, value, expDate)
-		chain := NewChain(chainElement)
+
+		chain.AddElement(chainElement)
 
 		deltaBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chainElement)) + int64(unsafe.Sizeof(chain))
 		hasAdded = true
@@ -234,6 +249,12 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 		h.chains[hashKey] = chain
 		h.mutexChains.Unlock()
 
+		h.mutexChainsMutex.Lock()
+		h.chainsMutex[hashKey] = chain.mutex
+		h.mutexChainsMutex.Unlock()
+
+		fmt.Printf("\n Setter chain Element:%#v", chainElement)
+		fmt.Printf("\n Add chain:%#v \n", chain)
 		return
 	}
 
@@ -241,14 +262,12 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	chainMutex = h.chainsMutex[hashKey]
 	h.mutexChainsMutex.RUnlock()
 
-	// @Check
 	if chainMutex == nil {
-		chainMutex := &sync.RWMutex{}
-		h.mutexChainsMutex.Lock()
-		h.chainsMutex[hashKey] = chainMutex
-		h.mutexChainsMutex.Unlock()
+		return
 	}
+
 	chainMutex.Lock()
+
 
 	chainElement = chain.findElement(key)
 
@@ -258,7 +277,7 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	} else {
 		chainElement = NewChainElement(key)
 		chainElement.setValue(setOperationObject, value, expDate)
-		chain.addElement(chainElement)
+		chain.AddElement(chainElement)
 
 		deltaBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chain)) + int64(unsafe.Sizeof(chainElement))
 		hasAdded = false
@@ -268,10 +287,11 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 
 	chainMutex.Unlock()
 
+	fmt.Printf("\n Setter chain Element:%#v", chainElement)
 	return
 }
 
-func (h *HashTable) getElement(key string, value interface{}, getOperationObject IGetterValue) (isHit bool, chainElement *ChainElement) {
+func (h *HashTable) getElement(key string, getOperationObject IGetterValue) (isHit bool, chainElement *ChainElement) {
 	var (
 		chain      *Chain
 		chainMutex *sync.RWMutex
@@ -279,13 +299,18 @@ func (h *HashTable) getElement(key string, value interface{}, getOperationObject
 	h.reHashingMutex.RLock()
 	defer h.reHashingMutex.RUnlock()
 
+	fmt.Printf(`Hash function "%#v`, h.hashFunction)
 	hashKey := h.hashFunction.CalculateHash(key)
 
+	fmt.Printf(`GET Hash key: "%d"`, hashKey)
 	h.mutexChains.RLock()
 	chain = h.chains[hashKey]
 	h.mutexChains.RUnlock()
 
+	fmt.Printf("\n GET CHAIN:%#v \n", chain)
+
 	if chain == nil {
+		fmt.Printf("\n Can't find chain")
 		return
 	}
 
@@ -294,16 +319,19 @@ func (h *HashTable) getElement(key string, value interface{}, getOperationObject
 	h.mutexChainsMutex.RUnlock()
 
 	if chainMutex == nil {
+		fmt.Printf("\n Can't find chain mutex")
 		return
 	}
 
 	chainMutex.RLock()
 
+	fmt.Printf("\n Go throw elements chain %#v", chain)
+
 	chainElement = chain.findElement(key)
-	isHit = true
 
 	if chainElement != nil {
 		chainElement.getValue(getOperationObject)
+		isHit = true
 	}
 
 	chainMutex.RUnlock()
@@ -351,7 +379,8 @@ func (h *HashTable) deleteElement(key string) (deletedBytes int64) {
 
 func (h *HashTable) lruEviction() {
 	bytesSize := atomic.LoadInt64(&h.bytesSize)
-	if h.maxBytesSize <= bytesSize {
+	fmt.Printf("\n bytesSize:%d maxBytesSize:%d \n", bytesSize, h.maxBytesSize)
+	if h.maxBytesSize > bytesSize {
 		return
 	}
 
@@ -398,7 +427,7 @@ func (h *HashTable) reHashing() {
 	newCapacity := countChains * 2
 	newChains := make([]*Chain, newCapacity)
 	newMutexes := make([]*sync.RWMutex, newCapacity)
-	newHashFunction := NewComplexStringHash(newCapacity, h.coefPString, h.coefPInt)
+	newHashFunction := NewComplexStringHash(uint64(newCapacity), h.coefPString, h.coefPInt)
 
 	var nextChainElement *ChainElement
 	for _, chain := range h.chains {
@@ -433,10 +462,11 @@ func (h *HashTable) reHachingAddElement(chains []*Chain, hashFunction *ComplexSt
 	chain = chains[hashKey]
 
 	if chain == nil {
-		chain = NewChain(chainElement)
+		chain = NewChain(&sync.RWMutex{})
+		chain.AddElement(chainElement)
 		h.chains[hashKey] = chain
 		return
 	}
 
-	chain.addElement(chainElement)
+	chain.AddElement(chainElement)
 }

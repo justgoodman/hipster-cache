@@ -1,5 +1,6 @@
 package value_type
 
+/*
 type Chain struct {
         firstElement *ChainElement
         lastElement *ChainElement
@@ -12,14 +13,15 @@ type ChainElement struct {
         value string
 }
 
-func NewChain(firstElement *ChainElement) &Chain {
+func NewChain(firstElement *ChainElement) *Chain {
         chain := &Chain{firstElement: firstElement, lastElement: firstElement, countElements: 1}
-        valueSizeBytes := unsafe.Sizeof(chain) + element.sizeBytes
+//        valueSizeBytes := unsafe.Sizeof(chain) + element.sizeBytes
+	return chain
 }
 
 func NewChainElement(value string) *ChainElement {
-        chainElement = &ChainElement{value: value}
-        chainElement.byteSize := unsage.Sizeof(chainElement) + len(value)}
+        chainElement := &ChainElement{value: value}
+        chainElement.byteSize = unsage.Sizeof(chainElement) + len(value)
         return chainElement
 }
 
@@ -33,7 +35,7 @@ func (this *Chain) findElement(index int) *ChainElement {
         }
 }
 
-func (this *Chain) GetRangeValues(indexStart,indexEnd) []string {
+func (this *Chain) GetRangeValues(indexStart,indexEnd int) []string {
         values := []string{}
         i := 0
         for element := this.firstElement; element != nil; element = element.next {
@@ -42,7 +44,7 @@ func (this *Chain) GetRangeValues(indexStart,indexEnd) []string {
                 }
 
                 if i >= indexStart && i <= indexEnd {
-                        value = append(values,elememnt.value)
+                        values = append(values,element.value)
                 }
         }
         return values
@@ -54,4 +56,4 @@ func (this *Chain) addElement(element *ChainElement) {
         this.lenght += 1
 }
 
-
+*/

@@ -4,10 +4,16 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"hipster-cache/common"
 	"hipster-cache/hash_table"
 	"hipster-cache/hash_table/value_type"
+)
+
+const (
+	ttlSeconds = "EX"
+	ttlMilliseconds = "PX"
 )
 
 type CacheServer struct {
@@ -87,13 +93,32 @@ func (s *CacheServer) getResponse(command string) (string,error) {
 	}
 
 	switch clientMessage.command {
-		case "GET":
-			if len(clientMessage.params) != 2 {
-				return "",fmt.Errorf("Error: incorrect parametes count")
+		case value_type.GetStringCmdName:
+			if len(clientMessage.params) != 1 {
+				return "",fmt.Errorf(`Error: incorrect parametes count need "1", was sended "%d"`,len(clientMessage.params))
 			}
-			GetStringOperation := value_type.NewGetStringOperation()
-			s.hashTable.GetElement(clientMessage.params[0],clientMessage.params[1], GetStringOperation)
-			return GetStringOperation.GetResult()
+			getStringOperation := value_type.NewGetStringOperation()
+			s.hashTable.GetElement(clientMessage.params[0], getStringOperation)
+			return getStringOperation.GetResult()
+		case value_type.SetStringCmdName:
+			if len(clientMessage.params) != 2 && len(clientMessage.params) != 4 {
+				return "",fmt.Errorf(`Error: incorrect parametes count need "2 or 4", was sended "%d"`,len(clientMessage.params))
+			}
+			ttl := 0
+			// This command with TTL
+			if len(clientMessage.params) == 4 {
+				duration = int(clinetMessage.params[3])
+				if duration <= 0 {
+					return "", fmt.Errorf(`Error: incorrect ttl time, ttl duration must me more  or equal 0, was sended "%s"`,clientMessage.params[3])
+				}
+				if clientMessage.params[2] == "EX" {
+				}
+			}
+			if lenl
+			setStringOperation := value_type.NewSetStringOperation()
+			//time.Now().Unix() + int64(10000)
+			s.hashTable.SetElement(clientMessage.params[0], time.Unix(time.Now().Unix()+ 10000,0), interface{}(clientMessage.params[1]), setStringOperation)
+			return setStringOperation.GetResult()
 	}
 	return "No error",nil
 }

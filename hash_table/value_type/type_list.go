@@ -1,4 +1,5 @@
 package value_type
+/*
 
 import (
 	"fmt"
@@ -58,7 +59,7 @@ type ListRangeOperation struct {
 	Err error
 }
 
-func (this *ListLenghtOperation) GetValue(value interface{}) {
+func (this *ListRangeOperation) GetValue(value interface{}) {
 	switch chain := value.(type) {
 		case *Chain:
 			this.Values = chain.GetRangeValues(this.IndexStart, this.IndexEnd)
@@ -89,7 +90,7 @@ func (this *ListSetOperation) SetValue(sourceValue,value interface{}) (valueSize
 			        return
 			}
 			deltaBytes := len(stringValue) - len(element.value)
-			element.value := stringValue
+			element.value = stringValue
 			chain.byteSize -=  deltaBytes
 
 			valueSizeBytes = chain.byteSize
@@ -97,3 +98,4 @@ func (this *ListSetOperation) SetValue(sourceValue,value interface{}) (valueSize
 			this.Err = fmt.Errorf("Error: list type in not the Chain")
 	}
 }
+*/

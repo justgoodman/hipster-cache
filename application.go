@@ -31,6 +31,7 @@ func (a *Application) Init() error {
 	if err != nil {
 		return err
 	}
+	a.initHashTable()
 
 	err = a.initTCP()
 	if err != nil {
@@ -45,8 +46,9 @@ func (a *Application) initRouting() {
 	http.Handle("/metrics", prometheus.Handler())
 }
 
-func (a *Application) iniHashTable() {
+func (a *Application) initHashTable() {
 	a.hashTable = hash_table.NewHashTable(a.config.InitCapacity, a.config.MaxLenghtKey, a.config.MaxBytesSize)
+	a.hashTable.InitMetrics()
 }
 
 func (a *Application) Run() error {

@@ -1,5 +1,6 @@
 package value_type
 
+/*
 type HashGetOperation struct {
 	// Enter parameter
 	Key string
@@ -46,3 +47,4 @@ func (this *HashSetOperation) SetValue(sourceValue, value interface{}) (valueByt
 		this.Err = fmt.Errorf("Hash table is not type of the hash table")
 	}
 }
+*/

@@ -3,12 +3,14 @@ package hash_table
 import (
 	"sync"
 	"time"
+	"fmt"
 )
 
 type Chain struct {
 	firstElement  *ChainElement
 	lastElement   *ChainElement
 	countElements int
+	mutex *sync.RWMutex
 }
 
 type LRUChain struct {
@@ -86,7 +88,7 @@ type ChainElement struct {
 	nextLRU *ChainElement
 	prevLRU *ChainElement
 	// Need for working with LRU(because in LRU element can be from another chain)
-	chainMutex *sync.Mutex
+	chainMutex *sync.RWMutex
 	// Experation Date
 	expDate       time.Time
 	key           string
@@ -94,16 +96,17 @@ type ChainElement struct {
 	value         interface{}
 }
 
-func NewChain(firstElement *ChainElement) *Chain {
-	return &Chain{firstElement: firstElement, countElements: 1}
+func NewChain(mutex *sync.RWMutex) *Chain {
+	return &Chain{mutex: mutex}
 }
 
-func NewChainElement(key string) *ChainElement {
-	chainElement := &ChainElement{key: key}
+func NewChainElement(key string)  *ChainElement {
+	chainElement := &ChainElement{key: key,value: interface{}("")}
 	return chainElement
 }
 
 func (c *Chain) deleteElement(element *ChainElement) {
+	fmt.Printf("\n Delete element \n")
 	if c.firstElement == element {
 		c.firstElement = element.next
 		if element.next != nil {
@@ -126,7 +129,7 @@ func (c *Chain) deleteElement(element *ChainElement) {
 
 func (e *ChainElement) setValue(setterValue ISetterValue, value interface{}, expDate time.Time) (deltaBytes int) {
 	e.expDate = expDate
-	newValueByteSize := setterValue.SetValue(e.value, value)
+	newValueByteSize := setterValue.SetValue(&e.value, value)
 
 	deltaByteSize := newValueByteSize - e.valueByteSize
 	e.valueByteSize = newValueByteSize
@@ -138,15 +141,19 @@ func (e *ChainElement) getValue(getterValue IGetterValue) {
 }
 
 func (c *Chain) findElement(key string) *ChainElement {
+	fmt.Printf("\n FIND ELEMENT \n")
 	for element := c.firstElement; element != nil; element = element.next {
+		fmt.Printf("\n Go thow element:%#v", element)
 		if element.key == key {
+			fmt.Printf("\n CHAIN:%#v \n", c)
 			return element
 		}
 	}
 	return nil
 }
 
-func (c *Chain) addElement(element *ChainElement) {
+func (c *Chain) AddElement(element *ChainElement) {
+	element.chainMutex = c.mutex
 	if c.lastElement == nil {
 		c.firstElement = element
 		c.lastElement = element
