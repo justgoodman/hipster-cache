@@ -129,10 +129,16 @@ func getDurationMicroseconds(duration time.Duration) float64 {
 	return float64(duration) / float64(time.Microsecond)
 }
 
-func (h *HashTable) SetElement(key string, expDate time.Time, value interface{}, setterValue ISetterValue) *ChainElement {
+func (h *HashTable) SetElement(key string, ttl time.Duration, value interface{}, setterValue ISetterValue) *ChainElement {
 	fmt.Printf("\n Set element:%#v", value)
 	timeStart := time.Now()
 
+	var expDate time.Time
+	if ttl > 0 {
+		expDate = time.Now().Add(ttl)
+	} else {
+		expDate = time.Unix(0,0)
+	}
 	chainElement, hasAdded, chainLenght, deltaBytes := h.setElement(key, expDate, value, setterValue)
 	if hasAdded {
 		countElements := atomic.AddInt64(&h.countElements, 1)
@@ -177,7 +183,8 @@ func (h *HashTable) GetElement(key string, getterValue IGetterValue) {
 	}
 
 	fmt.Printf("\n Find Element:%#v \n", chainElement)
-	if chainElement.expDate.Unix() < time.Now().Unix() {
+	if chainElement.expDate.Unix() != 0 && chainElement.expDate.Unix() < time.Now().Unix() {
+		fmt.Printf("\n Exp Date \n")
 		isHit = false
 		h.removeElement(chainElement)
 	}

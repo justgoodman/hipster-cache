@@ -5,6 +5,7 @@ import (
 	"net"
 	"strings"
 	"time"
+	"strconv"
 
 	"hipster-cache/common"
 	"hipster-cache/hash_table"
@@ -104,20 +105,25 @@ func (s *CacheServer) getResponse(command string) (string,error) {
 			if len(clientMessage.params) != 2 && len(clientMessage.params) != 4 {
 				return "",fmt.Errorf(`Error: incorrect parametes count need "2 or 4", was sended "%d"`,len(clientMessage.params))
 			}
-			ttl := 0
+			var ttl time.Duration
 			// This command with TTL
 			if len(clientMessage.params) == 4 {
-				duration = int(clinetMessage.params[3])
-				if duration <= 0 {
+				cmdDuration,_ := strconv.Atoi(clientMessage.params[3])
+				if cmdDuration <= 0 {
 					return "", fmt.Errorf(`Error: incorrect ttl time, ttl duration must me more  or equal 0, was sended "%s"`,clientMessage.params[3])
 				}
-				if clientMessage.params[2] == "EX" {
+				switch clientMessage.params[2] {
+					case ttlSeconds:
+						ttl = time.Second * time.Duration(cmdDuration)
+					case ttlMilliseconds:
+						ttl = time.Millisecond * time.Duration(cmdDuration)
+					default:
+						return "", fmt.Errorf(`Error: incorrect parameter name, must be "%s" or "%s", was sended "%s"r`,ttlSeconds,ttlMilliseconds, clientMessage.params[2])
 				}
 			}
-			if lenl
 			setStringOperation := value_type.NewSetStringOperation()
 			//time.Now().Unix() + int64(10000)
-			s.hashTable.SetElement(clientMessage.params[0], time.Unix(time.Now().Unix()+ 10000,0), interface{}(clientMessage.params[1]), setStringOperation)
+			s.hashTable.SetElement(clientMessage.params[0], ttl, interface{}(clientMessage.params[1]), setStringOperation)
 			return setStringOperation.GetResult()
 	}
 	return "No error",nil
