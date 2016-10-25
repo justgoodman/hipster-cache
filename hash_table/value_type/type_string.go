@@ -24,19 +24,11 @@ func (o *SetStringOperation) GetResult() (string,error) {
 	return "",o.err
 }
 
-func (o *SetStringOperation) SetValue2(sourceValue *string, value *string) {
-	fmt.Printf("\n SetValue inner:%#v",value)
-	*sourceValue = *value
-	fmt.Printf("\n New value:%#v", sourceValue)
-	return
-}
-
-
-func (o *SetStringOperation) SetValue(sourceValue *interface{}, value interface{}) (valueSizeBytes int) {
+func (o *SetStringOperation) SetValue(sourceValue *interface{}, value interface{}) (valueBytesSize int) {
 	fmt.Printf("\n SetValue inner:%#v",value)
 	switch v := value.(type) {
 	case string:
-		valueSizeBytes = int(unsafe.Sizeof(sourceValue)) + len(v)
+		valueBytesSize = int(unsafe.Sizeof(sourceValue)) + len(v)
 	default:
 		o.err = fmt.Errorf(`Incorrect value type: type is not string`)
 		return

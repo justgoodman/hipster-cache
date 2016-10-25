@@ -92,7 +92,7 @@ type ChainElement struct {
 	// Experation Date
 	expDate       time.Time
 	key           string
-	valueByteSize int
+	valueBytesSize int
 	value         interface{}
 }
 
@@ -131,8 +131,8 @@ func (e *ChainElement) setValue(setterValue ISetterValue, value interface{}, exp
 	e.expDate = expDate
 	newValueByteSize := setterValue.SetValue(&e.value, value)
 
-	deltaByteSize := newValueByteSize - e.valueByteSize
-	e.valueByteSize = newValueByteSize
+	deltaByteSize := newValueByteSize - e.valueBytesSize
+	e.valueBytesSize = newValueByteSize
 	return deltaByteSize
 }
 

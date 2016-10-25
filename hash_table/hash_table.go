@@ -55,7 +55,7 @@ type IGetterValue interface {
 // For implement set operation for all types data you can implemet this interface
 type ISetterValue interface {
 	IBaseOperation
-	SetValue(sourceValue *interface{}, newValue interface{}) (valueSizeBytes int)
+	SetValue(sourceValue *interface{}, newValue interface{}) (valueBytesSize int)
 }
 
 const (
@@ -218,7 +218,7 @@ func (h *HashTable) removeElement(element *ChainElement) (sizeBytes int64) {
 
 	prevLRU := element.prevLRU
 	nextLRU := element.nextLRU
-	sizeBytes = int64(unsafe.Sizeof(element)) + int64(element.valueByteSize)
+	sizeBytes = int64(unsafe.Sizeof(element)) + int64(element.valueBytesSize)
 	element.chainMutex.Unlock()
 	h.lruChain.delete(element, prevLRU, nextLRU)
 	return
@@ -248,7 +248,7 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 
 		chain.AddElement(chainElement)
 
-		deltaBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chainElement)) + int64(unsafe.Sizeof(chain))
+		deltaBytes = int64(chainElement.valueBytesSize) + int64(unsafe.Sizeof(chainElement)) + int64(unsafe.Sizeof(chain))
 		hasAdded = true
 		chainLenght = 1
 
@@ -286,7 +286,7 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 		chainElement.setValue(setOperationObject, value, expDate)
 		chain.AddElement(chainElement)
 
-		deltaBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chain)) + int64(unsafe.Sizeof(chainElement))
+		deltaBytes = int64(chainElement.valueBytesSize) + int64(unsafe.Sizeof(chain)) + int64(unsafe.Sizeof(chainElement))
 		hasAdded = false
 	}
 
@@ -376,7 +376,7 @@ func (h *HashTable) deleteElement(key string) (deletedBytes int64) {
 	chainElement := chain.findElement(key)
 
 	if chainElement != nil {
-		deletedBytes = int64(chainElement.valueByteSize) + int64(unsafe.Sizeof(chainElement))
+		deletedBytes = int64(chainElement.valueBytesSize) + int64(unsafe.Sizeof(chainElement))
 		chain.deleteElement(chainElement)
 	}
 

@@ -3,6 +3,7 @@ package value_type
 import (
 	"fmt"
 	"strconv"
+	"unsafe"
 )
 
 const (
@@ -11,6 +12,51 @@ const (
 	SetListCmdName = "LSET"
 	LenghtListCmdName = "LLEN"
 )
+
+type sliceString struct {
+	slice []string
+	bytesSize int
+}
+
+func NewSliceString() *sliceString {
+	slice := &sliceString{}
+	slice.bytesSize = int(unsafe.Sizeof(slice))
+	return slice
+}
+
+func (s *sliceString) addElement(value string) {
+	s.slice = append(s.slice, value)
+	s.bytesSize += len(value) + int(unsafe.Sizeof(value))
+}
+
+func (s *sliceString) setElement(index int, value string) error {
+	if len(s.slice) <= index || index < 0 {
+		return fmt.Errorf(`Error: Index "%d" not found in List`, index)
+	}
+	lastString := s.slice[index]
+	s.slice[index] = value
+	s.bytesSize += len(value) - len(lastString)
+	return nil
+}
+
+func (s *sliceString) getRangeValues(indexStart,indexEnd int) []string {
+        values := []string{}
+
+	for i,value := range s.slice {
+                if i > indexEnd {
+                     break
+                }
+
+                if i >= indexStart && i <= indexEnd {
+                        values = append(values,value)
+                }
+        }
+        return values
+}
+
+func (s *sliceString) getLenght() int {
+	return len(s.slice)
+}
 
 type PushListOperation struct {
 	baseOperation
@@ -21,7 +67,7 @@ func NewPushListOperation() *PushListOperation {
 	return &PushListOperation{baseOperation: baseOperation{commandName: PushListCmdName}}
 }
 
-func (l *PushListOperation) SetValue(sourceValue *interface{}, value interface{}) (valueSizeBytes int) { var stringValue string
+func (l *PushListOperation) SetValue(sourceValue *interface{}, value interface{}) (valueBytesSize int) { var stringValue string
 	switch setValue :=  value.(type) {
 		case string:
 			stringValue = setValue
@@ -31,16 +77,17 @@ func (l *PushListOperation) SetValue(sourceValue *interface{}, value interface{}
 	}
 
 	switch slice := (*sourceValue).(type) {
-		case []string:
-			slice = append(slice, stringValue)
-			*sourceValue = interface{}(slice)
+		case *sliceString:
+			slice.addElement(stringValue)
+			valueBytesSize = slice.bytesSize
 		// It is like nil, default value
 		case string:
 			if slice != "" {
 				l.err = fmt.Errorf("Error: list type is string")
 			}
-			newSlice := []string{}
-			newSlice = append(newSlice,stringValue)
+			newSlice := NewSliceString()
+			newSlice.addElement(stringValue)
+			valueBytesSize = newSlice.bytesSize
 			*sourceValue = interface{}(newSlice)
 		default:
 			l.err = fmt.Errorf("Error: list type is not the []string")
@@ -70,8 +117,8 @@ func (l *LenghtListOperation) GetResult() (string,error) {
 
 func (l *LenghtListOperation) GetValue(value interface{}) {
 	switch slice := value.(type) {
-		case []string:
-			l.Lenght = len(slice)
+		case *sliceString:
+			l.Lenght = slice.getLenght()
 		default:
 			l.err = fmt.Errorf("Error: list type in not the []string")
 	}
@@ -88,25 +135,11 @@ func NewRangeListOperation(indexStart,indexEnd int) *RangeListOperation {
 	return &RangeListOperation{baseOperation: baseOperation{commandName: RangeListCmdName},indexStart: indexStart, indexEnd: indexEnd,}
 }
 
-func GetRangeValues(slice []string, indexStart,indexEnd int) []string {
-        values := []string{}
-
-	for i,value := range slice {
-                if i > indexEnd {
-                     break
-                }
-
-                if i >= indexStart && i <= indexEnd {
-                        values = append(values,value)
-                }
-        }
-        return values
-}
 
 func (l *RangeListOperation) GetValue(value interface{}) {
 	switch slice := value.(type) {
-		case []string:
-			l.Values = GetRangeValues(slice,l.indexStart, l.indexEnd)
+		case *sliceString:
+			l.Values = slice.getRangeValues(l.indexStart, l.indexEnd)
 		default:
 			l.err = fmt.Errorf("Error: list type in not the Chain")
 	}
@@ -138,7 +171,7 @@ func NewSetListOperation(index int) *SetListOperation {
 	return &SetListOperation{baseOperation: baseOperation{commandName: SetListCmdName}, index: index,}
 }
 
-func (l *SetListOperation) SetValue(sourceValue *interface{},value interface{}) (valueSizeBytes int) {
+func (l *SetListOperation) SetValue(sourceValue *interface{},value interface{}) (valueBytesSize int) {
 	var stringValue string
 	switch setValue :=  value.(type) {
 		case string:
@@ -149,12 +182,9 @@ func (l *SetListOperation) SetValue(sourceValue *interface{},value interface{}) 
 	}
 
 	switch slice := (*sourceValue).(type) {
-		case []string:
-			if len(slice) <= l.index || l.index < 0 {
-				l.err = fmt.Errorf(`Error: Index "%d" not found in List`, l.index)
-				return
-			}
-			slice[l.index] = stringValue
+		case *sliceString:
+			l.err = slice.setElement(l.index,stringValue)
+			valueBytesSize = slice.bytesSize
 		default:
 			l.err = fmt.Errorf("Error: list type in not the []string")
 	}
@@ -163,6 +193,7 @@ func (l *SetListOperation) SetValue(sourceValue *interface{},value interface{}) 
 
 func (l *SetListOperation) GetResult() (string,error) {
 	if l.err == nil {
-		return "OK",l.err }
+		return "OK",l.err
+	}
 	return "",l.err
 }
