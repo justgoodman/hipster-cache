@@ -2,7 +2,6 @@ package value_type
 
 import (
 	"fmt"
-	"unsafe"
 	"strconv"
 )
 
@@ -31,26 +30,20 @@ func (l *PushListOperation) SetValue(sourceValue *interface{}, value interface{}
 			return
 	}
 
-	element := NewChainElement(stringValue)
-	switch chain := (*sourceValue).(type) {
-		case *Chain:
-			chain.addElement(element)
-			chain.bytesSize += element.bytesSize
-			l.elementIndex = chain.countElements - 1
-
-			valueSizeBytes = chain.bytesSize
+	switch slice := (*sourceValue).(type) {
+		case []string:
+			slice = append(slice, stringValue)
+			*sourceValue = interface{}(slice)
 		// It is like nil, default value
 		case string:
-			if chain != "" {
+			if slice != "" {
 				l.err = fmt.Errorf("Error: list type is string")
 			}
-			newChain := NewChain(element)
-			l.elementIndex = 0
-			*sourceValue = interface{}(newChain)
-
-			valueSizeBytes = int(unsafe.Sizeof(chain)) + element.bytesSize
+			newSlice := []string{}
+			newSlice = append(newSlice,stringValue)
+			*sourceValue = interface{}(newSlice)
 		default:
-			l.err = fmt.Errorf("Error: list type is not the Chain")
+			l.err = fmt.Errorf("Error: list type is not the []string")
 	}
 	return
 }
@@ -60,7 +53,6 @@ func (o *PushListOperation) GetResult() (string,error) {
 		return "OK",o.err }
 	return "",o.err
 }
-
 
 
 type LenghtListOperation struct {
@@ -77,11 +69,11 @@ func (l *LenghtListOperation) GetResult() (string,error) {
 }
 
 func (l *LenghtListOperation) GetValue(value interface{}) {
-	switch chain := value.(type) {
-		case *Chain:
-			l.Lenght = chain.countElements
+	switch slice := value.(type) {
+		case []string:
+			l.Lenght = len(slice)
 		default:
-			l.err = fmt.Errorf("Error: list type in not the Chain")
+			l.err = fmt.Errorf("Error: list type in not the []string")
 	}
 }
 
@@ -96,10 +88,25 @@ func NewRangeListOperation(indexStart,indexEnd int) *RangeListOperation {
 	return &RangeListOperation{baseOperation: baseOperation{commandName: RangeListCmdName},indexStart: indexStart, indexEnd: indexEnd,}
 }
 
+func GetRangeValues(slice []string, indexStart,indexEnd int) []string {
+        values := []string{}
+
+	for i,value := range slice {
+                if i > indexEnd {
+                     break
+                }
+
+                if i >= indexStart && i <= indexEnd {
+                        values = append(values,value)
+                }
+        }
+        return values
+}
+
 func (l *RangeListOperation) GetValue(value interface{}) {
-	switch chain := value.(type) {
-		case *Chain:
-			l.Values = chain.GetRangeValues(l.indexStart, l.indexEnd)
+	switch slice := value.(type) {
+		case []string:
+			l.Values = GetRangeValues(slice,l.indexStart, l.indexEnd)
 		default:
 			l.err = fmt.Errorf("Error: list type in not the Chain")
 	}
@@ -141,20 +148,15 @@ func (l *SetListOperation) SetValue(sourceValue *interface{},value interface{}) 
 			return
 	}
 
-	switch chain := (*sourceValue).(type) {
-		case *Chain:
-			element := chain.findElement(l.index)
-			if element == nil {
+	switch slice := (*sourceValue).(type) {
+		case []string:
+			if len(slice) <= l.index || l.index < 0 {
 				l.err = fmt.Errorf(`Error: Index "%d" not found in List`, l.index)
-			        return
+				return
 			}
-			deltaBytes := len(stringValue) - len(element.value)
-			element.value = stringValue
-			chain.bytesSize -=  deltaBytes
-
-			valueSizeBytes = chain.bytesSize
+			slice[l.index] = stringValue
 		default:
-			l.err = fmt.Errorf("Error: list type in not the Chain")
+			l.err = fmt.Errorf("Error: list type in not the []string")
 	}
 	return
 }

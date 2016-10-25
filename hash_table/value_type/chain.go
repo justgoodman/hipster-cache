@@ -14,6 +14,7 @@ type Chain struct {
 type ChainElement struct {
         bytesSize int
         value string
+	key string
 	next *ChainElement
 }
 
@@ -22,34 +23,25 @@ func NewChain(firstElement *ChainElement) *Chain {
 	return chain
 }
 
-func NewChainElement(value string) *ChainElement {
-        chainElement := &ChainElement{value: value}
+func NewChainElement(key,value string) *ChainElement {
+        chainElement := &ChainElement{key:key, value: value}
         chainElement.bytesSize = int(unsafe.Sizeof(chainElement)) + len(value)
         return chainElement
 }
 
-func (this *Chain) findElement(index int) *ChainElement {
-        i := 0
+func (this *Chain) findElement(key string) *ChainElement {
         for element := this.firstElement; element != nil; element = element.next {
-                if i == index {
+                if element.key == key {
                         return element
                 }
-                i += 1
         }
 	return nil
 }
 
-func (this *Chain) GetRangeValues(indexStart,indexEnd int) []string {
-        values := []string{}
-        i := 0
+func (this *Chain) getAllValues() []*DictElement {
+        values := []*DictElement{}
         for element := this.firstElement; element != nil; element = element.next {
-                if i < indexStart || i > indexEnd {
-                      return values
-                }
-
-                if i >= indexStart && i <= indexEnd {
-                        values = append(values,element.value)
-                }
+                  values = append(values,NewDictElement(element.key, element.value))
         }
         return values
 }

@@ -171,6 +171,28 @@ func (s *CacheServer) getResponse(command string) (string, error) {
 
 		s.hashTable.SetElement(clientMessage.params[0], 0, interface{}(clientMessage.params[2]), setListOperation)
 		return setListOperation.GetResult()
+	case value_type.SetDictCmdName:
+		if len(clientMessage.params) != 3 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "3", was sended "%d"`, len(clientMessage.params))
+		}
+		setDictOperation := value_type.NewSetDictOperation(clientMessage.params[1])
+		s.hashTable.SetElement(clientMessage.params[0], 0, interface{}(clientMessage.params[2]), setDictOperation)
+		return setDictOperation.GetResult()
+	case value_type.GetDictCmdName:
+		if len(clientMessage.params) != 2 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "2", was sended "%d"`, len(clientMessage.params))
+		}
+		getDictOperation := value_type.NewGetDictOperation(clientMessage.params[1])
+		s.hashTable.GetElement(clientMessage.params[0], getDictOperation)
+		return getDictOperation.GetResult()
+	case value_type.GetAllDictCmdName:
+		if len(clientMessage.params) != 1 {
+			return "", fmt.Errorf(`Error: incorrect parametes count need "1", was sended "%d"`, len(clientMessage.params))
+		}
+		getAllDictOperation := value_type.NewGetAllDictOperation()
+		s.hashTable.GetElement(clientMessage.params[0], getAllDictOperation)
+		return getAllDictOperation.GetResult()
+
 	}
 	return "No error", nil
 }
