@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config 
+data:
+  application.json: |-
+    {"metrics_port": 4012,"server_port": 4011,"client_port": 4014, "address": "104.155.49.205", "consul_address": "consul"}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: "server"
+spec:
+  selector:
+    app: "server"
+  ports:
+    - protocol: "TCP"
+      port: 4011 
+      targetPort: 4011
+      name: http
+    - protocol: "TCP"
+      port: 4012 
+      targetPort: 4012
+      name: metrics
+    - protocol: "TCP"
+      port: 4014 
+      targetPort: 4014
+      name: client
+  type: LoadBalancer

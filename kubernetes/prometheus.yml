@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: 'true'
+  labels:
+    name: prometheus
+  name: prometheus
+spec:
+  selector:
+    app: prometheus
+  type: LoadBalancer
+  ports:
+  - name: prometheus
+    protocol: TCP
+    port: 9090
+    targetPort: 9090
+  - name: alertmanager
+    protocol: TCP
+    port: 9093
+    targetPort: 9093
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1beta1
+metadata:
+  name: slow
+provisioner: kubernetes.io/gce-pd
+parameters:
+  type: pd-standard
+  zone: europe-west1-d
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: prom-data
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "slow"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus
+data:
+  prometheus.yml: |-
+    global:
+      scrape_interval: 15s
+    rule_files:
+      - /etc/prometheus/rules
+      - /etc/prometheus/alerts
+    scrape_configs:
+    - job_name: prometheus
+      honor_labels: true
+      static_configs: 
+      - targets: 
+          - "localhost:9090"
+    - job_name: 'consul'
+      consul_sd_configs:
+      - server: 'consul:8500'
+        services: ['hipster-cache-metrics','hipster-cache-proxy-metrics']
+      relabel_configs:
+      - source_labels: ['__meta_consul_service']
+        regex: '(.*)'
+        target_label:  'job'
+        replacement:   '$1'
+      - source_labels: ['__meta_consul_node']
+        regex:         '(.*)'
+        target_label:  'instance'
+        replacement:   '$1'
+      - source_labels: ['__meta_consul_tags']
+        regex:         ',(production|canary),'
+        target_label:  'group'
+        replacement:   '$1'
+  alertmanager.yml: >
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'test@example.org'
+    route:
+      receiver: 'default-receiver'
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 3h
+
+    receivers:
+      - name: 'default-receiver'
+        email_configs:
+          - to: 'justgoodman@yandex.ru'
+  rules: >
+  alerts: >
