@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 )
 
 type Config struct {
@@ -20,15 +21,22 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
-func (this *Config) LoadFile(configPath string) error {
+func (c *Config) LoadFile(configPath string) error {
 	configString, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(configString, this)
+	err = json.Unmarshal(configString, c)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%#v", this)
+
+	if serverIP := os.Getenv("SERVER_IP"); serverIP != "" {
+		c.Address = serverIP
+	}
+	if consulURL := os.Getenv("CONSUL_URL"); consulURL != "" {
+		c.ConsulAddress = consulURL
+	}
+	fmt.Printf("%#v", c)
 	return nil
 }

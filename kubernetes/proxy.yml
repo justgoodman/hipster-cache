@@ -17,4 +17,13 @@ spec:
     - protocol: "TCP"
       port: 4001 
       targetPort: 4001
+      name: "server-port"
+    - protocol: "TCP"
+      port: 4002 
+      targetPort: 4002
+      name: "metrics-port"
+    - protocol: "TCP"
+      port: 4004 
+      targetPort: 4004
+      name: "client-port"
   type: LoadBalancer

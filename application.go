@@ -57,21 +57,31 @@ func (a *Application) Run() error {
 	return nil
 }
 
-func (a *Application) registerService(catalog *consulapi.Catalog, id string, serviceName string, port int) error {
+func (a *Application) registerService(catalog *consulapi.Catalog, serviceName,nodeName string, port int) error {
 	service := &consulapi.AgentService{
-		ID:      id,
+		ID:      serviceName,
 		Service: serviceName,
 		Port:    port,
 	}
 
 	reg := &consulapi.CatalogRegistration{
 		Datacenter: "dc1",
-		Node:       id,
+		Node:       nodeName,
 		Address:    a.config.Address,
 		Service:    service,
 	}
 	_, err := catalog.Register(reg, nil)
 	return err
+}
+
+func (a *Application) registerHealthCheck(agent *consulapi.Agent, address string, port int) error {
+	reg := &consulapi.AgentCheckRegistration{
+		ID: fmt.Sprintf("HealthCheckServer_%s", address),
+		Name: fmt.Sprintf("Health Check TCP for node: %s", address),
+	}
+	reg.TCP = fmt.Sprintf("%s:%d", address, port)
+	reg.Interval = "30s"
+	return agent.CheckRegister(reg)
 }
 
 func (a *Application) initDiscovery() error {
@@ -86,14 +96,22 @@ func (a *Application) initDiscovery() error {
 	catalog := a.consul.Catalog()
 
 	// Register for Applications
-	err = a.registerService(catalog, "cache1", "hipster-cache", a.config.ServerPort)
+	err = a.registerService(catalog, "hipster-cache", a.config.Address, a.config.ServerPort)
+
+	if err != nil {
+		return err
+	}
+
+	agent := a.consul.Agent()
+	// Register heath check
+	err = a.registerHealthCheck(agent, a.config.Address, a.config.ServerPort)
 
 	if err != nil {
 		return err
 	}
 
 	// Register for Prometheus
-	return a.registerService(catalog, "cache1-mertics", "hipster-cache-metrics", a.config.MetricsPort)
+	return a.registerService(catalog, "hipster-cache-metrics", a.config.Address, a.config.MetricsPort)
 }
 
 func (a *Application) initTCP() error {

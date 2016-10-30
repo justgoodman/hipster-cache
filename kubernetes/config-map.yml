@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: consul 
 data:
-  url: http://consul-client:8500
+  url: consul:8500

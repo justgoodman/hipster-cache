@@ -1,0 +1,31 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: consul
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consul
+  template:
+    metadata:
+      name: consul
+      labels:
+        app: consul
+    spec:
+      containers:
+      - name: consul
+        image: consul
+        args:
+        ports:
+        - name: ui-port
+          containerPort: 8500
+        - name: alt-port
+          containerPort: 8400
+        volumeMounts:
+        - name: config-volume
+          mountPath: /consul/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: consul-config

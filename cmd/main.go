@@ -10,15 +10,16 @@ import (
 	"hipster-cache/config"
 )
 
-var addr = flag.String("listen-address", ":4001", "The address to listen on for HTTP requests.")
-
 func main() {
-	flag.Parse()
-	config := config.NewConfig()
 
 	logger := loggo.GetLogger("")
 
-	err := config.LoadFile("etc/application.json")
+	var configFile string
+	flag.StringVar(&configFile, "config", "etc/application.json", "Config file")
+	flag.Parse()
+
+	config := config.NewConfig()
+	err := config.LoadFile(configFile)
 	if err != nil {
 		logger.Criticalf("Error reading configuration file: '%s'", err.Error())
 		os.Exit(1)
@@ -32,6 +33,4 @@ func main() {
 		os.Exit(1)
 	}
 	application.Run()
-	//	http.Handle("/metrics", prometheus.Handler())
-	//http.ListenAndServe(*addr, nil)
 }

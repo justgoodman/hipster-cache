@@ -11,7 +11,7 @@ spec:
     protocol: TCP
     port: 8500
     targetPort: 8500
-  - name: alt-port
+  - name: alt-port2
     protocol: TCP
     port: 8400
     targetPort: 8400

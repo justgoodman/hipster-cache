@@ -15,19 +15,25 @@ spec:
     spec:
       containers:
       - name: proxy
-        image: "gcr.io/metal-cascade-146909/proxy:0.5"
+        image: "gcr.io/metal-cascade-146909/proxy:0.15"
         imagePullPolicy: Always
         env:
         - name: CONSUL_URL
           valueFrom:
             configMapKeyRef:
-              name: consul 
+              name: consul
               key: url
+        - name: SERVER_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         ports:
         - name: http
           containerPort: 4001
         - name: metrics 
           containerPort: 4002
+        - name: client 
+          containerPort: 4004
         volumeMounts:
         - name: config-volume
           mountPath: /go/bin/etc
