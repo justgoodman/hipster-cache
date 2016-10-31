@@ -8,6 +8,12 @@ global:
     monitor: codelab
     foo:     bar
 
+rule_files:
+- warning_rule
+- alert_rule
+- alert_rule2
+- warning_rule2
+
 scrape_configs:
 - job_name: prometheus
 
@@ -43,3 +49,21 @@ scrape_configs:
     regex:         ',(production|canary),'
     target_label:  'group'
     replacement:   '$1'
+
+- job_name: 'example-random'
+
+  scrape_interval: 5s
+  scrape_timeout: 10s
+
+  target_groups:
+  - targets: ['192.168.59.3:8080', '192.168.59.3:8081']
+    labels:
+      group: 'production'
+
+  - targets: ['192.168.59.3:8082']
+    labels:
+      group: 'canary'
+
+  - targets: ['golang10:40111']
+    labels:
+      group: 'bob_api'

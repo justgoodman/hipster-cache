@@ -1,0 +1,1 @@
+{"metrics_port":4010,"server_port": 4011, "address": "hipster_cache5", "consul_address": "consul","maximum_lenght_key": 255, "maximum_bytes_size": 104857600, "init_capacity": 100}

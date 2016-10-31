@@ -16,11 +16,65 @@ hipster_cache5:
    ports: 
     - "4000:4000"
     - "4003:4003"
-   command: sleep 100000
+   command: go run /go/src/hipster-cache/cmd/main.go -config=/go/src/hipster-cache/etc/application.json
    volumes:
     - /Users/Jack/PhpstormProjects/go/src/hipster-cache:/go/src/hipster-cache
    links:
     - consul5
+   environment:
+    - CONSUL_URL=consul5:8500 
+    - SERVER_IP=hipster_cache5 
+    - METRICS_PORT=4000
+    - SERVER_PORT=4003
+hipster_cache2_1:
+   image: golang:1.7 
+   ports: 
+    - "4021:4021"
+    - "4022:4022"
+#   command: sleep 100000
+   command: go run /go/src/hipster-cache/cmd/main.go -config=/go/src/hipster-cache/etc/application.json
+   volumes:
+    - /Users/Jack/PhpstormProjects/go/src/hipster-cache:/go/src/hipster-cache
+   links:
+    - consul5
+   environment:
+    - CONSUL_URL=consul5:8500 
+    - SERVER_IP=hipster_cache2_1 
+    - METRICS_PORT=4021
+    - SERVER_PORT=4022
+hipster_cache3_1:
+   image: golang:1.7 
+   ports: 
+    - "4031:4031"
+    - "4032:4032"
+#   command: sleep 100000
+   command: go run /go/src/hipster-cache/cmd/main.go -config=/go/src/hipster-cache/etc/application.json
+   volumes:
+    - /Users/Jack/PhpstormProjects/go/src/hipster-cache:/go/src/hipster-cache
+   links:
+    - consul5
+   environment:
+    - CONSUL_URL=consul5:8500 
+    - SERVER_IP=hipster_cache3_1 
+    - METRICS_PORT=4031
+    - SERVER_PORT=4032
+#hipster_cache_bin:
+#   build: cache-server2 
+#   ports: 
+#   - "4010:4010"
+#   - "4011:4011"
+#   command: /go/bin/hipster-cache -config=/go/bin/etc/application.json
+#  links:
+#   - consul5
+#hipster_cache_proxy_bin:
+#   build: cache-proxy
+#   ports: 
+#    - "5012:5012"
+#   - "5013:5013"
+#   - "5014:5014"
+#   command: /go/bin/hipster-cache-proxy -config=/go/bin/etc/application.json
+#   links:
+#   - consul5
 hipster-cache-proxy4:
    image: golang:1.7 
    ports: 
@@ -33,6 +87,8 @@ hipster-cache-proxy4:
    links:
     - consul5
     - hipster_cache5
+    - hipster_cache2_1
+    - hipster_cache3_1
 prometheus2:
    image: prom/prometheus
    volumes:

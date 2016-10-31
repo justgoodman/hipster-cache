@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: proxy
-        image: "gcr.io/metal-cascade-146909/proxy:0.15"
+        image: "gcr.io/metal-cascade-146909/proxy:0.16"
         imagePullPolicy: Always
         env:
         - name: CONSUL_URL

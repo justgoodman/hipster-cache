@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -37,6 +38,17 @@ func (c *Config) LoadFile(configPath string) error {
 	if consulURL := os.Getenv("CONSUL_URL"); consulURL != "" {
 		c.ConsulAddress = consulURL
 	}
+	if metricsPortString := os.Getenv("METRICS_PORT"); metricsPortString != "" {
+		if metricsPort, err := strconv.Atoi(metricsPortString); err == nil {
+			c.MetricsPort = metricsPort
+		}
+	}
+	if serverPortString := os.Getenv("SERVER_PORT"); serverPortString != "" {
+		if serverPort, err := strconv.Atoi(serverPortString); err == nil {
+			c.ServerPort = serverPort
+		}
+	}
+
 	fmt.Printf("%#v", c)
 	return nil
 }

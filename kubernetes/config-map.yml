@@ -3,4 +3,4 @@ kind: ConfigMap
 metadata:
   name: consul 
 data:
-  url: consul:8500
+  url: 10.112.0.41:8500

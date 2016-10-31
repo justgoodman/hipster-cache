@@ -4,4 +4,4 @@ metadata:
   name: proxy-config 
 data:
   application.json: |-
-    {"metrics_port": 4002,"server_port": 4001,"client_port": 4004, "address": "104.155.86.180", "consul_address": "consul:8500"}
+    {"metrics_port": 4002,"server_port": 4001,"client_port": 4004, "address": "104.155.86.180", "consul_address": "consul:8500","max_key_lenght": 255, "count_virt_nodes": 100}
