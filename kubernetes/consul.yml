@@ -11,46 +11,7 @@ spec:
     protocol: TCP
     port: 8500
     targetPort: 8500
-  - name: alt-port
+  - name: alt-port2
     protocol: TCP
     port: 8400
     targetPort: 8400
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: consul
-data:
-  local.json: |- {"acl_datacenter":"dc1","acl_default_policy":"allow","acl_down_policy":"extend-cache","acl_master_token":"the_one_ring","bootstrap_expect":1,"datacenter":"dc1","data_dir":"/usr/local/bin/consul.d/data","server":true}
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: consul
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: counsul
-  template:
-    metadata:
-      name: consul
-      labels:
-        app: consul
-    spec:
-      containers:
-      - name: consul
-        image: consul
-        args:
-        ports:
-        - name: ui-port
-          containerPort: 8500
-        - name: alt-port
-          containerPort: 8400
-        volumeMounts:
-        - name: config-volume
-          mountPath: /counsul/config
-      volumes:
-      - name: config-volume
-        configMap:
-          name: prometheus
