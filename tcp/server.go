@@ -16,6 +16,7 @@ import (
 const (
 	ttlSeconds      = "EX"
 	ttlMilliseconds = "PX"
+	exitCommand	= "EXIT"
 )
 
 type CacheServer struct {
@@ -58,7 +59,10 @@ func (s *CacheServer) Run() {
 }
 
 func (s *CacheServer) handleMessage(conn net.Conn) {
-	var buf [512]byte
+	var (
+		buf [512]byte
+		clientMessage *ClientMessage
+	)
 	for {
 		n, err := conn.Read(buf[0:])
 		if err != nil {
@@ -68,31 +72,36 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 			}
 			return
 		}
-		// Remove last symbol => "\n"
 		command := string(buf[0:n])
-		// SET mykey "Hello sdf sdf d df df"
-		// SET
-		// get and replace
-		// split раз и split
-		// GET nonexisting
 		fmt.Printf(`Response "%s"`, command)
-		response, err := s.getResponse(command)
+		clientMessage,err = s.getClientMessage(command)
+		if err != nil {
+			conn.Write([]byte(err.Error() + "\n"))
+			return
+		}
+		if clientMessage.command == exitCommand {
+			conn.Close()
+			return
+		}
+		response, err := s.getResponse(clientMessage)
 		if err != nil {
 			response = err.Error()
 		}
 		conn.Write([]byte(response + "\n"))
-		//	time.Sleep(time.Second * 10)
-		//		conn.Close()
-		//		return
 	}
 	return
 }
 
-func (s *CacheServer) getResponse(command string) (string, error) {
+func (s *CacheServer) getClientMessage(command string) (*ClientMessage,error) {
 	clientMessage := NewClientMessage()
 	if err := clientMessage.Init(command); err != nil {
-		return "", err
+		return nil, err
 	}
+	return clientMessage, nil
+}
+
+func (s *CacheServer) getResponse(clientMessage *ClientMessage) (string, error) {
+
 	// Check key lenght
 	if len(clientMessage.params) >= 1 {
 		if int(s.hashTable.MaxKeyLenght) < utf8.RuneCount([]byte(clientMessage.params[0])) {
@@ -213,9 +222,6 @@ func (m *ClientMessage) Init(value string) error {
 	fmt.Printf(`\n Words :"%#v"`, words)
 	if len(words) == 0 {
 		return fmt.Errorf(`Error: you don't set the command`)
-	}
-	if len(words) < 2 {
-		return fmt.Errorf(`You don't set any parameters`)
 	}
 	m.command = strings.ToUpper(words[0])
 	m.params = words[1:]
