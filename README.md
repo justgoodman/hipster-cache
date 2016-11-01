@@ -82,6 +82,17 @@ You can see working prometheus service in this link:<br />
 http://104.199.49.154:9090/targets <br /><br />
 ![](http://dl2.joxi.net/drive/2016/11/01/0011/0529/758289/89/ce746fe175.jpg)
 
+Kubernetes 
+==================
+All services deployed in K8, but i don't fixed all connection bugs between pods <br/>
+<br/>
+My Pods:<br/><br/>
+![](http://dl2.joxi.net/drive/2016/11/01/0011/0529/758289/89/3a601a70ab.jpg)<br/>
+My Services:<br/><br/>
+![](http://dl2.joxi.net/drive/2016/11/01/0011/0529/758289/89/e64aa1e9c9.jpg)<br/>
+Kubernetes config you can see in this page:<br/>
+https://github.com/justgoodman/hipster-cache/tree/master/kubernetes <br />
+
 API
 =====================
 
