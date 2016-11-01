@@ -2,7 +2,6 @@ package value_type
 
 import (
 	"fmt"
-	"strconv"
 	"unsafe"
 )
 
@@ -112,7 +111,7 @@ func NewLenghtListOperation() *LenghtListOperation {
 }
 
 func (l *LenghtListOperation) GetResult() (string,error) {
-	return strconv.Itoa(l.Lenght), l.err
+	return fmt.Sprintf(`"%d"`,l.Lenght), l.err
 }
 
 func (l *LenghtListOperation) GetValue(value interface{}) {

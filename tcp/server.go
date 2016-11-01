@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"hipster-cache/common"
 	"hipster-cache/hash_table"
@@ -91,6 +92,12 @@ func (s *CacheServer) getResponse(command string) (string, error) {
 	clientMessage := NewClientMessage()
 	if err := clientMessage.Init(command); err != nil {
 		return "", err
+	}
+	// Check key lenght
+	if len(clientMessage.params) >= 1 {
+		if int(s.hashTable.MaxKeyLenght) < utf8.RuneCount([]byte(clientMessage.params[0])) {
+			return "", fmt.Errorf(`Error: key lenght is more than maximum Lenght "%d"`, s.hashTable.MaxKeyLenght)
+		}
 	}
 
 	switch clientMessage.command {

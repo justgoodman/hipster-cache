@@ -17,6 +17,7 @@ type HashTable struct {
 	countElements    int64
 	bytesSize        int64
 	maxChainLenght   int64
+	MaxKeyLenght     int64
 	chains           []*Chain
 	hashFunction     *ComplexStringHash
 	mutexChains      sync.RWMutex
@@ -76,6 +77,7 @@ func NewHashTable(initCapacity int64, maxKeyLenght int64, maxBytesSize int64) *H
 		hashFunction: NewComplexStringHash(uint64(initCapacity), coefP, coefP),
 		coefPString: coefP,
 		coefPInt: coefP,
+		MaxKeyLenght: maxKeyLenght,
 		lruChain: NewLRUChain(),
 	}
 }
@@ -450,6 +452,7 @@ func (h *HashTable) reHashing() {
 	}
 
 	h.capacity = newCapacity
+	h.chains = newChains
 	h.chainsMutex = newMutexes
 	h.hashFunction = newHashFunction
 	h.bytesSize = newBytesSize
@@ -471,7 +474,7 @@ func (h *HashTable) reHachingAddElement(chains []*Chain, hashFunction *ComplexSt
 	if chain == nil {
 		chain = NewChain(&sync.RWMutex{})
 		chain.AddElement(chainElement)
-		h.chains[hashKey] = chain
+		chains[hashKey] = chain
 		return
 	}
 
