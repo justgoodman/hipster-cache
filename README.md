@@ -91,7 +91,7 @@ hipster_cache>LPUSH mylist "one"<br/>
 OK<br/>
 hipster_cache>LPUSH mylist "two"<br/>
 OK<br/>
-hipster_cache>LRANGE mylist 0 1
+hipster_cache>LRANGE mylist 0 1<br/>
 "one"<br/>
 "two"<br/>
 
@@ -103,9 +103,9 @@ hipster_cache>LPUSH mylist "one"<br/>
 OK<br/>
 hipster_cache>LPUSH mylist "two"<br/>
 OK<br/>
-hipster_cache>LSET mylist 0 "three"
+hipster_cache>LSET mylist 0 "three"<br/>
 OK<br>
-hipster_cache>LRANGE mylist 0 1
+hipster_cache>LRANGE mylist 0 1<br/>
 "one"<br/>
 "three"<br/>
 
@@ -117,8 +117,44 @@ hipster_cache>LPUSH mylist "one"<br/>
 OK<br/>
 hipster_cache>LPUSH mylist "two"<br/>
 OK<br/>
-hipster_cache>LLEN mylist 
+hipster_cache>LLEN mylist <br/>
 "2"<br>
+
+Dictionary
+---------
+
+**DSET** key field value
+
+Sets field in the dictionary at key to value<br/>
+
+hipster_cache>DSET item label Juno<br/>
+OK<br/>
+hipster_cache>DGET item label<br/>
+"Juno"<br/>
+
+**DGET** key field<br/>
+
+Returns the value associated with field in the dictionary at key.<br/>
+
+hipster_cache>DSET item label Juno<br/>
+OK<br/>
+hipster_cache>DGET item label<br/>
+"Juno"<br/>
+
+**DGETALL** key
+
+Returns all fields and values of the dictionary at key. In the returned value, every field name is followed by its value, so the length of the reply is twice the size of the dictionary<br/>
+
+hipster_cache>DSET item label Juno<br/>
+OK<br/>
+hipster_cache>DSET item color Yellow<br/>
+OK<br/>
+hipster_cache>DGETALL item<br/>
+"label"<br/>
+"Juno"<br/>
+"color"<br/>
+"Yellow"<br/>
+
 
 
 Theory
