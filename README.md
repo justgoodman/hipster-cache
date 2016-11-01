@@ -4,7 +4,7 @@ Cache Server
 ![](http://dl2.joxi.net/drive/2016/10/13/0011/0529/758289/89/f84998ed49.jpg)
 
 
-Guys give me time until 15:00 for complete documentation and update my code on Google Cloud(kubernetes)
+Documentation
 ====================
 
 I complete all code, you can see it in this links:<br />
@@ -34,8 +34,8 @@ to you special docker folder<br>
 3. If you don't install glide, install it: "go get github.com/Masterminds/glide"<br/>
 4. Install all dependencies: <br/>
 4.1 cd hipster-cache && glide install && cd ../ <br/>
-4.2 cd hipster-cache-proxy && glide install && cd../ <br/>
-4.3 cd hipster-cache-client && glide install && cd../ <br/>
+4.2 cd hipster-cache-proxy && glide install && cd ../ <br/>
+4.3 cd hipster-cache-client && glide install && cd ../ <br/>
 5. After that you can run all needed envirinment using: <br/>
 docker-compose up -d <br/>
 <br/>
@@ -46,6 +46,7 @@ docker exec -it 38d87ddbb0bf bash -c "cd /go/src/hipster-cache-client && go test
 In my example 38d87ddbb0bf was docker id for hipster_cache_client <br/>
 
 **It really works!)**
+![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/c72e168adf.jpg)
 
 Consul
 ====================
