@@ -22,7 +22,31 @@ https://github.com/justgoodman/hipster-cache/tree/master/kubernetes <br />
 Also you can see how to run application locally using docker-compose: 
 https://github.com/justgoodman/hipster-cache/tree/master/dockerJuno 
 
- 
+How to run localy
+====================
+1. For that you need to copy folder  
+https://github.com/justgoodman/hipster-cache/tree/master/dockerJuno 
+to you special docker folder<br>
+2. In this folder do "git clone" for all applications: <br/>
+2.1 git clone git@github.com:justgoodman/hipster-cache.git<br/>
+2.2 git clone git@github.com:justgoodman/hipster-cache-proxy.git<br/>
+2.3 git clone git@github.com:justgoodman/hipster-cache-client.git<br/>
+3. If you don't install glide, install it: "go get github.com/Masterminds/glide"<br/>
+4. Install all dependencies: <br/>
+4.1 cd hipster-cache && glide install && cd ../ <br/>
+4.2 cd hipster-cache-proxy && glide install && cd../ <br/>
+4.3 cd hipster-cache-client && glide install && cd../ <br/>
+5. After that you can run all needed envirinment using: <br/>
+docker-compose up -d <br/>
+<br/>
+For run test, you need get docker id for hipster_cache_client: <br/>
+docker ps | grep client <br/>
+And using this id run coommand: <br/>
+docker exec -it 38d87ddbb0bf bash -c "cd /go/src/hipster-cache-client && go test ./test/..." <br/>
+In my example 38d87ddbb0bf was docker id for hipster_cache_client <br/>
+
+**It really works!)**
+
 Consul
 ====================
 
