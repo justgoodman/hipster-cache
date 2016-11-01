@@ -43,20 +43,32 @@ http://104.199.49.154:9090/targets <br /><br />
 API
 =====================
 
+How to connect
+-------
+You can connet to ProxyServer: it sends your command to needed CacheServer and returns response of founded CacheServer
+telnet 104.155.86.180 4001
+
+Also you have opportunity connect directly to needed CacheServer
+(on kubernets i don't fix bug with balances, so i can't give you IP addres of Node)
+<br />
+![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/13df8f5ef9.jpg)
+(i have bug with additional \n :-) )
+<br />
+
 Strings
 -------
 
-GET key
+**GET** key
 
 Get the value of key. If the key does not exist the special value nil is returned. An error is returned if the value stored at key is not a string, because GET only handles string values.
 
-Exmaples:
-hipster_cache>GET nonexisting
-(nil)
-hipster_cache>SET mykey "Hello"
-OK
-hipster_cache>GET mykey
-"Hello"
+Exmaples:<br/>
+hipster_cache>GET nonexisting<br/>
+(nil)</br>
+hipster_cache>SET mykey "Hello"<br/>
+OK <br/>
+hipster_cache>GET mykey<br/>
+"Hello"<br/>
 
 Theory
 =====================
