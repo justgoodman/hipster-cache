@@ -49,16 +49,14 @@ You can connet to ProxyServer: it sends your command to needed CacheServer and r
 telnet 104.155.86.180 4001
 
 Also you have opportunity connect directly to needed CacheServer
-(on kubernets i don't fix bug with balances, so i can't give you IP addres of Node)
-<br />
-![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/13df8f5ef9.jpg)
-(i have bug with additional \n :-) )
-<br />
+(on kubernets i don't fix bug with balances, so i can't give you IP addres of Node) <br />
+![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/13df8f5ef9.jpg)<br />
+(i have bug with additional \n :-) ) <br />
 
 Strings
 -------
 
-**GET** key
+**GET** key <br/>
 
 Get the value of key. If the key does not exist the special value nil is returned. An error is returned if the value stored at key is not a string, because GET only handles string values.
 
@@ -70,9 +68,61 @@ OK <br/>
 hipster_cache>GET mykey<br/>
 "Hello"<br/>
 
-Theory
-=====================
+**SET** key value [seconds]<br/>
 
+Set key to hold the string value. Optionaly you can set TTL(in seconds) on third parameter </br>
+
+hipster_cache>SET mykey "Hello" 10 <br/>
+OK <br/>
+
+Lists
+------
+**LPUSH** key value
+
+Insert specified value at the head of the list stored at key.If key does not exist, it is created as empty list before performing the push operations<br/>
+hipster_cache>LPUSH junoList Money<br/>
+OK <br/>
+
+**LRANGE** key start stop
+
+Returns the specified elements of the list stored at key. The offsets start and stop are zero-based indexes, with 0 being the first element of the list (the head of the list), 1 being the next element and so on.
+
+hipster_cache>LPUSH mylist "one"<br/>
+OK<br/>
+hipster_cache>LPUSH mylist "two"<br/>
+OK<br/>
+hipster_cache>LRANGE mylist 0 1
+"one"<br/>
+"two"<br/>
+
+**LSET** key index value <br/>
+
+Sets the list element at index to value
+
+hipster_cache>LPUSH mylist "one"<br/>
+OK<br/>
+hipster_cache>LPUSH mylist "two"<br/>
+OK<br/>
+hipster_cache>LSET mylist 0 "three"
+OK<br>
+hipster_cache>LRANGE mylist 0 1
+"one"<br/>
+"three"<br/>
+
+**LLEN** key
+
+Returns the length of the list stored at key
+
+hipster_cache>LPUSH mylist "one"<br/>
+OK<br/>
+hipster_cache>LPUSH mylist "two"<br/>
+OK<br/>
+hipster_cache>LLEN mylist 
+"2"<br>
+
+
+Theory
+====================
 Hash tables
 --------
 
