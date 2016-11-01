@@ -22,7 +22,7 @@ https://github.com/justgoodman/hipster-cache/tree/master/kubernetes <br />
 Also you can see how to run application locally using docker-compose: 
 https://github.com/justgoodman/hipster-cache/tree/master/dockerJuno 
 
-How to run localy
+How to run locally
 ====================
 1. For that you need to copy folder  
 https://github.com/justgoodman/hipster-cache/tree/master/dockerJuno 
@@ -48,7 +48,7 @@ In my example 38d87ddbb0bf was docker id for hipster_cache_client <br/>
 **It really works!)**
 ![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/c72e168adf.jpg)
 
-How to check it localy
+How to check it locally
 ====================
 1. Add to your hosts file, IP your docker machine for "juno.net" , i set my "docker-machine ip"<br/>
 2. For directly working with one of 3 HipsterCacheServer you can run:<br/>
