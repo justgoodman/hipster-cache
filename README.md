@@ -48,6 +48,14 @@ In my example 38d87ddbb0bf was docker id for hipster_cache_client <br/>
 **It really works!)**
 ![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/c72e168adf.jpg)
 
+How to check it localy
+====================
+1. Add to your hosts file, IP your docker machine for "juno.net" , i set my "docker-machine ip"
+2. For directly working with one of 3 HipsterCacheServer you can run:
+telnet juno.net
+
+
+
 Consul
 ====================
 
@@ -93,12 +101,18 @@ OK <br/>
 hipster_cache>GET mykey<br/>
 "Hello"<br/>
 
-**SET** key value [seconds]<br/>
+**SET** key value [EX seconds] [PX milliseconds] <br/>
 
-Set key to hold the string value. Optionaly you can set TTL(in seconds) on third parameter </br>
-
-hipster_cache>SET mykey "Hello" 10 <br/>
+Set key to hold the string value.<br/>
+Options<br/>
+EX seconds -- Set the specified expire time, in seconds.<br/>
+PX milliseconds -- Set the specified expire time, in milliseconds.<br/>
+<br/>
+hipster_cache>SET mykey "Hello" <br/>
 OK <br/>
+hipster_cache>SET mykey "Hello" EX 10 <br/>
+OK <br/>
+
 
 Lists
 ------
