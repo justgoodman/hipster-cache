@@ -7,18 +7,20 @@ Cache Server
 Guys give me time until 15:00 for complete documentation and update my code on Google Cloud(kubernetes)
 ====================
 
-I complete all code, you can see it in this links:
-1) https://github.com/justgoodman/hipster-cache this is CacheServer (i created my own implementation of HashTable)
-2) https://github.com/justgoodman/hipster-cache-proxy this is ProxyServer ( ProxyServer provides Sharding using VirtualNodes scheme.Proxy Server can works in two modes: 1) As a proxy: your client sends any command to ProxyServer, it find needed CacheServer node, sends command to this node and returns this response to your client 2) As a mediator: your client sends a key to ProxyServer, it founds needed CacheServer node and returns address of this node for Client. After that your client can sends command to specified CacheServer.
-3) https://github.com/justgoodman/hipster-cache-client this is Client (this client uses Proxy Server as a mediator, this client sends key to proxy server, proxy server returns CacheServerNode address. After that client sends command to this CacheServerNode.
+I complete all code, you can see it in this links:→→
+1) https://github.com/justgoodman/hipster-cache this is CacheServer (i created my own implementation of HashTable)→→
+2) https://github.com/justgoodman/hipster-cache-proxy this is ProxyServer ( ProxyServer provides Sharding using VirtualNodes scheme.Proxy Server can works in two modes: 1) As a proxy: your client sends any command to ProxyServer, it find needed CacheServer node, sends command to this node and returns this response to your client 2) As a mediator: your client sends a key to ProxyServer, it founds needed CacheServer node and returns address of this node for Client. After that your client can sends command to specified CacheServer.→→
+3) https://github.com/justgoodman/hipster-cache-client this is Client (this client uses Proxy Server as a mediator, this client sends key to proxy server, proxy server returns CacheServerNode address. After that client sends command to this CacheServerNode.→→
 4) You can run test for my application using this code:
-https://github.com/justgoodman/hipster-cache-client/tree/master/test 
+https://github.com/justgoodman/hipster-cache-client/tree/master/test →→
+→→
+→→
+You can see my kubernetes configs in this folder:→→
+https://github.com/justgoodman/hipster-cache/tree/master/kubernetes →→
+→→
+Also you can see how to run application locally using docker-compose: →→
+https://github.com/justgoodman/hipster-cache/tree/master/dockerJuno →→
 
-You can see my kubernetes configs in this folder:
-https://github.com/justgoodman/hipster-cache/tree/master/kubernetes
- 
-Also you can see how to run application locally using docker-compose:
-https://github.com/justgoodman/hipster-cache/tree/master/dockerJuno
  
 
 Theory
