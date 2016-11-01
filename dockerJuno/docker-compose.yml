@@ -6,11 +6,6 @@ consul5:
    volumes:
     - ./consul/config:/consul/config
     - ./consul/bin:/consul/bin
-#   links:
-#    - hipster-cache-proxy
-#   command: consul agent -server -bind=127.0.0.1 -client=0.0.0.0
-#   environment:
-#    - CONSUL_LOCAL_CONFIG={"acl_datacenter":"dc1","acl_default_policy":"deny","acl_down_policy":"extend-cache","acl_master_token":"the_one_ring","bootstrap_expect":1,"datacenter":"dc1","data_dir":"/usr/local/bin/consul.d/data","server":true} 
 hipster_cache5:
    image: golang:1.7 
    ports: 
@@ -18,7 +13,7 @@ hipster_cache5:
     - "4003:4003"
    command: go run /go/src/hipster-cache/cmd/main.go -config=/go/src/hipster-cache/etc/application.json
    volumes:
-    - /Users/Jack/PhpstormProjects/go/src/hipster-cache:/go/src/hipster-cache
+    - ./hipster-cache:/go/src/hipster-cache
    links:
     - consul5
    environment:
@@ -31,10 +26,9 @@ hipster_cache2_1:
    ports: 
     - "4021:4021"
     - "4022:4022"
-#   command: sleep 100000
    command: go run /go/src/hipster-cache/cmd/main.go -config=/go/src/hipster-cache/etc/application.json
    volumes:
-    - /Users/Jack/PhpstormProjects/go/src/hipster-cache:/go/src/hipster-cache
+    - ./hipster-cache:/go/src/hipster-cache
    links:
     - consul5
    environment:
@@ -47,10 +41,9 @@ hipster_cache3_1:
    ports: 
     - "4031:4031"
     - "4032:4032"
-#   command: sleep 100000
    command: go run /go/src/hipster-cache/cmd/main.go -config=/go/src/hipster-cache/etc/application.json
    volumes:
-    - /Users/Jack/PhpstormProjects/go/src/hipster-cache:/go/src/hipster-cache
+    - ./hipster-cache:/go/src/hipster-cache
    links:
     - consul5
    environment:
@@ -58,32 +51,31 @@ hipster_cache3_1:
     - SERVER_IP=hipster_cache3_1 
     - METRICS_PORT=4031
     - SERVER_PORT=4032
-#hipster_cache_bin:
-#   build: cache-server2 
-#   ports: 
-#   - "4010:4010"
-#   - "4011:4011"
-#   command: /go/bin/hipster-cache -config=/go/bin/etc/application.json
-#  links:
-#   - consul5
-#hipster_cache_proxy_bin:
-#   build: cache-proxy
-#   ports: 
-#    - "5012:5012"
-#   - "5013:5013"
-#   - "5014:5014"
-#   command: /go/bin/hipster-cache-proxy -config=/go/bin/etc/application.json
-#   links:
-#   - consul5
+hipster_client:
+  image: golang:1.7
+  ports:
+   - "4041:4041"
+#  command: go test /go/src/hipster-cache-client/test/... 
+  command: sleep 10000 
+  volumes:
+    - ./hipster-cache-client:/go/src/hipster-cache-client
+  links:
+    - hipster-cache-proxy4
+    - hipster_cache5
+    - hipster_cache2_1
+    - hipster_cache3_1
+  environment:
+    - PROXY_ADDRESS=hipster-cache-proxy4
+    - PROXY_PORT=4001
 hipster-cache-proxy4:
    image: golang:1.7 
    ports: 
     - "4001:4001"
     - "4002:4002"
     - "4004:4004"
-   command: sleep 100000
+   command: go run /go/src/hipster-cache-proxy/cmd/main.go -config=/go/src/hipster-cache-proxy/etc/application.json
    volumes:
-    - /Users/Jack/PhpstormProjects/go/src/hipster-cache-proxy:/go/src/hipster-cache-proxy
+    - ./hipster-cache-proxy:/go/src/hipster-cache-proxy
    links:
     - consul5
     - hipster_cache5
