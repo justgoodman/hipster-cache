@@ -31,6 +31,15 @@ You can see working consul service on this link:<br />
 http://104.155.104.83:8500/ui/#/dc1/services <br />
 ![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/f1b19308a1.jpg)
 
+
+Prometheus
+===================
+
+All services send metrics to Prometheus
+You can see working prometheus service in this link:<br />
+http://104.199.49.154:9090/targets <br />
+![](http://dl2.joxi.net/drive/2016/11/01/0011/0529/758289/89/ce746fe175.jpg)
+
 Theory
 =====================
 
