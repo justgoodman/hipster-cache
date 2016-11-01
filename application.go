@@ -57,7 +57,7 @@ func (a *Application) Run() error {
 	return nil
 }
 
-func (a *Application) registerService(catalog *consulapi.Catalog, serviceName,nodeName string, port int) error {
+func (a *Application) registerService(catalog *consulapi.Catalog, serviceName, nodeName string, port int) error {
 	service := &consulapi.AgentService{
 		ID:      serviceName,
 		Service: serviceName,
@@ -76,7 +76,7 @@ func (a *Application) registerService(catalog *consulapi.Catalog, serviceName,no
 
 func (a *Application) registerHealthCheck(agent *consulapi.Agent, address string, port int) error {
 	reg := &consulapi.AgentCheckRegistration{
-		ID: fmt.Sprintf("HealthCheckServer_%s", address),
+		ID:   fmt.Sprintf("HealthCheckServer_%s", address),
 		Name: fmt.Sprintf("Health Check TCP for node: %s", address),
 	}
 	reg.TCP = fmt.Sprintf("%s:%d", address, port)

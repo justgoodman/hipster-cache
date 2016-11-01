@@ -1,16 +1,16 @@
 package hash_table
 
 import (
+	"fmt"
 	"sync"
 	"time"
-	"fmt"
 )
 
 type Chain struct {
 	firstElement  *ChainElement
 	lastElement   *ChainElement
 	countElements int
-	mutex *sync.RWMutex
+	mutex         *sync.RWMutex
 }
 
 type LRUChain struct {
@@ -90,18 +90,18 @@ type ChainElement struct {
 	// Need for working with LRU(because in LRU element can be from another chain)
 	chainMutex *sync.RWMutex
 	// Experation Date
-	expDate       time.Time
-	key           string
+	expDate        time.Time
+	key            string
 	valueBytesSize int
-	value         interface{}
+	value          interface{}
 }
 
 func NewChain(mutex *sync.RWMutex) *Chain {
 	return &Chain{mutex: mutex}
 }
 
-func NewChainElement(key string)  *ChainElement {
-	chainElement := &ChainElement{key: key,value: interface{}("")}
+func NewChainElement(key string) *ChainElement {
+	chainElement := &ChainElement{key: key, value: interface{}("")}
 	return chainElement
 }
 

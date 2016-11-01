@@ -1,8 +1,8 @@
 package hash_table
 
 import (
-	"math/rand"
 	"fmt"
+	"math/rand"
 )
 
 // Polinomial Hash Function
@@ -42,7 +42,7 @@ type ComplexStringHash struct {
 // Calculate String Hash, using thus fuction for hash table  the average lenght of the longest chain c is O(1+alpha)
 // where aplha=n/m is the load factor of the hash table
 func (c *ComplexStringHash) CalculateHash(value string) uint64 {
-	fmt.Printf(`Enter value: "%s"`, value) 
+	fmt.Printf(`Enter value: "%s"`, value)
 	fmt.Printf(`String hash function: "%#v"`, c.stringHash)
 	resultStringHash := c.stringHash.CalculateHash(value)
 	fmt.Printf(`StringHash: "%d"`, resultStringHash)

@@ -18,14 +18,15 @@ func NewSetStringOperation() *SetStringOperation {
 	return &SetStringOperation{baseOperation{commandName: SetStringCmdName}}
 }
 
-func (o *SetStringOperation) GetResult() (string,error) {
+func (o *SetStringOperation) GetResult() (string, error) {
 	if o.err == nil {
-		return "OK",o.err }
-	return "",o.err
+		return "OK", o.err
+	}
+	return "", o.err
 }
 
 func (o *SetStringOperation) SetValue(sourceValue *interface{}, value interface{}) (valueBytesSize int) {
-	fmt.Printf("\n SetValue inner:%#v",value)
+	fmt.Printf("\n SetValue inner:%#v", value)
 	switch v := value.(type) {
 	case string:
 		valueBytesSize = int(unsafe.Sizeof(sourceValue)) + len(v)

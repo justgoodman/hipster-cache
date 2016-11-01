@@ -1,8 +1,8 @@
 package tcp
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 type ClientMessage struct {

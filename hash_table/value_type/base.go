@@ -1,7 +1,7 @@
 package value_type
 
 type baseOperation struct {
-	err error
+	err         error
 	commandName string
 }
 

@@ -15,8 +15,8 @@ import (
 const (
 	ttlSeconds      = "EX"
 	ttlMilliseconds = "PX"
-	exitCommand	= "EXIT"
-	endSymbol	= "\n"
+	exitCommand     = "EXIT"
+	endSymbol       = "\n"
 )
 
 type CacheServer struct {
@@ -55,7 +55,7 @@ func (s *CacheServer) Run() {
 
 func (s *CacheServer) handleMessage(conn net.Conn) {
 	var (
-		buf [512]byte
+		buf           [512]byte
 		clientMessage *ClientMessage
 	)
 	for {
@@ -69,7 +69,7 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 		}
 		command := string(buf[0:n])
 		fmt.Printf(`Response "%s"`, command)
-		clientMessage,err = s.getClientMessage(command)
+		clientMessage, err = s.getClientMessage(command)
 		if err != nil {
 			conn.Write([]byte(err.Error() + endSymbol))
 			return
@@ -87,7 +87,7 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 	return
 }
 
-func (s *CacheServer) getClientMessage(command string) (*ClientMessage,error) {
+func (s *CacheServer) getClientMessage(command string) (*ClientMessage, error) {
 	clientMessage := NewClientMessage()
 	if err := clientMessage.Init(command); err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ func (s *CacheServer) getResponse(clientMessage *ClientMessage) (string, error) 
 			return "", fmt.Errorf(`Error: third parameter must be integer, was sended "%d"`, clientMessage.params[1])
 		}
 
-		rangeListOperation := value_type.NewRangeListOperation(indexStart,indexEnd)
+		rangeListOperation := value_type.NewRangeListOperation(indexStart, indexEnd)
 		s.hashTable.GetElement(clientMessage.params[0], rangeListOperation)
 		return rangeListOperation.GetResult()
 	case value_type.LenghtListCmdName:

@@ -1,13 +1,13 @@
 package hash_table
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
-	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -68,17 +68,17 @@ func NewHashTable(initCapacity int64, maxKeyLenght int64, maxBytesSize int64) *H
 	sizeOfOneChain := int64(unsafe.Sizeof(&Chain{})) + int64(unsafe.Sizeof(&ChainElement{})) + int64(unsafe.Sizeof(Chain{}))
 	maxCapacity := int64(maxBytesSize / sizeOfOneChain)
 	// CoefP must be more than maximCapacity*maxKeyLenght
-	coefP := uint64(maxCapacity*maxKeyLenght + (rand.Int63n(math.MaxInt64-int64(maxCapacity*maxKeyLenght))))
+	coefP := uint64(maxCapacity*maxKeyLenght + (rand.Int63n(math.MaxInt64 - int64(maxCapacity*maxKeyLenght))))
 	return &HashTable{
 		capacity:     initCapacity,
 		maxBytesSize: maxBytesSize,
 		chains:       make([]*Chain, initCapacity, initCapacity),
 		chainsMutex:  make([]*sync.RWMutex, initCapacity, initCapacity),
 		hashFunction: NewComplexStringHash(uint64(initCapacity), coefP, coefP),
-		coefPString: coefP,
-		coefPInt: coefP,
+		coefPString:  coefP,
+		coefPInt:     coefP,
 		MaxKeyLenght: maxKeyLenght,
-		lruChain: NewLRUChain(),
+		lruChain:     NewLRUChain(),
 	}
 }
 
@@ -139,7 +139,7 @@ func (h *HashTable) SetElement(key string, ttl time.Duration, value interface{},
 	if ttl > 0 {
 		expDate = time.Now().Add(ttl)
 	} else {
-		expDate = time.Unix(0,0)
+		expDate = time.Unix(0, 0)
 	}
 	chainElement, hasAdded, chainLenght, deltaBytes := h.setElement(key, expDate, value, setterValue)
 	if hasAdded {
@@ -234,7 +234,6 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	h.reHashingMutex.RLock()
 	defer h.reHashingMutex.RUnlock()
 
-
 	hashKey := h.hashFunction.CalculateHash(key)
 
 	fmt.Printf("\n SET hash key:%d", hashKey)
@@ -276,7 +275,6 @@ func (h *HashTable) setElement(key string, expDate time.Time, value interface{},
 	}
 
 	chainMutex.Lock()
-
 
 	chainElement = chain.findElement(key)
 
