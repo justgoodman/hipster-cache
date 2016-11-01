@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -17,6 +16,7 @@ const (
 	ttlSeconds      = "EX"
 	ttlMilliseconds = "PX"
 	exitCommand	= "EXIT"
+	endSymbol	= "\n"
 )
 
 type CacheServer struct {
@@ -24,11 +24,6 @@ type CacheServer struct {
 	logger    common.ILogger
 	listener  *net.TCPListener
 	hashTable *hash_table.HashTable
-}
-
-type ClientMessage struct {
-	command string
-	params  []string
 }
 
 func NewCacheServer(hashTable *hash_table.HashTable, logger common.ILogger, port int) *CacheServer {
@@ -76,7 +71,7 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 		fmt.Printf(`Response "%s"`, command)
 		clientMessage,err = s.getClientMessage(command)
 		if err != nil {
-			conn.Write([]byte(err.Error() + "\n"))
+			conn.Write([]byte(err.Error() + endSymbol))
 			return
 		}
 		if clientMessage.command == exitCommand {
@@ -87,7 +82,7 @@ func (s *CacheServer) handleMessage(conn net.Conn) {
 		if err != nil {
 			response = err.Error()
 		}
-		conn.Write([]byte(response + "\n"))
+		conn.Write([]byte(response + endSymbol))
 	}
 	return
 }
@@ -211,55 +206,4 @@ func (s *CacheServer) getResponse(clientMessage *ClientMessage) (string, error) 
 
 	}
 	return "No error", nil
-}
-
-func NewClientMessage() *ClientMessage {
-	return &ClientMessage{}
-}
-
-func (m *ClientMessage) Init(value string) error {
-	words := m.splitMessageBySpaceAndQuates(value)
-	fmt.Printf(`\n Words :"%#v"`, words)
-	if len(words) == 0 {
-		return fmt.Errorf(`Error: you don't set the command`)
-	}
-	m.command = strings.ToUpper(words[0])
-	m.params = words[1:]
-	return nil
-}
-
-func (m *ClientMessage) splitMessageBySpaceAndQuates(message string) []string {
-	words := []string{}
-	var word string
-	var character string
-	delimeter := ""
-	for _, characterCode := range message {
-		character = string(characterCode)
-		switch character {
-		case ` `:
-			if delimeter == "" {
-				words = append(words, word)
-				word = ""
-				break
-			}
-			word += character
-		case `"`:
-			if delimeter == character {
-				delimeter = ""
-				break
-			}
-			if delimeter == "" {
-				delimeter = character
-				break
-			}
-		case "\n", "\r":
-		default:
-			word += character
-
-		}
-	}
-	if word != "" {
-		words = append(words, word)
-	}
-	return words
 }
