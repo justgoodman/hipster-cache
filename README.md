@@ -29,6 +29,10 @@ Proxy for Anonymus client
 -------------------------
 ![](http://g.recordit.co/a3JmUuYZeX.gif)
 
+Mediator for Golang client
+------------------------- 
+![](http://g.recordit.co/wfAKdmnhcz.gif)
+
 How to run locally
 ====================
 1. For that you need to copy folder  
