@@ -22,6 +22,13 @@ https://github.com/justgoodman/hipster-cache/tree/master/kubernetes <br />
 Also you can see how to run application locally using docker-compose: 
 https://github.com/justgoodman/hipster-cache/tree/master/dockerJuno 
 
+Scheme of work
+===================
+
+Proxy for Anonymus client 
+-------------------------
+http://g.recordit.co/a3JmUuYZeX.gif
+
 How to run locally
 ====================
 1. For that you need to copy folder  
