@@ -13,8 +13,8 @@ I complete all code, you can see it in this links:→→
 3) https://github.com/justgoodman/hipster-cache-client this is Client (this client uses Proxy Server as a mediator, this client sends key to proxy server, proxy server returns CacheServerNode address. After that client sends command to this CacheServerNode.→→
 4) You can run test for my application using this code:
 https://github.com/justgoodman/hipster-cache-client/tree/master/test →→
-→→
-→→
+<br />
+<br />
 You can see my kubernetes configs in this folder:→→
 https://github.com/justgoodman/hipster-cache/tree/master/kubernetes →→
 →→
