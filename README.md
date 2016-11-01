@@ -50,11 +50,20 @@ In my example 38d87ddbb0bf was docker id for hipster_cache_client <br/>
 
 How to check it localy
 ====================
-1. Add to your hosts file, IP your docker machine for "juno.net" , i set my "docker-machine ip"
-2. For directly working with one of 3 HipsterCacheServer you can run:
-telnet juno.net
-
-
+1. Add to your hosts file, IP your docker machine for "juno.net" , i set my "docker-machine ip"<br/>
+2. For directly working with one of 3 HipsterCacheServer you can run:<br/>
+telnet juno.net 4022<br/>
+telnet juno.net 4032<br/>
+telnet juno.net 4001<br/>
+3. For send command to ProxyServer you can run:<br/>
+telnet jono.net 4001<br/>
+In proxy server you can use command:<br/>
+**GET_SHARD** key <br/>
+This command returns shard address for specified key<br/>
+Locally you can observe:<br/>
+Consul: http://juno.net:8500/ui <br/>
+Promehteus: http://juno.net:9090<br/>
+Grafana: http://juno.net:3001/login<br
 
 Consul
 ====================
