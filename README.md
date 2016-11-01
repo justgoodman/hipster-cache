@@ -27,7 +27,7 @@ Scheme of work
 
 Proxy for Anonymus client 
 -------------------------
-http://g.recordit.co/a3JmUuYZeX.gif
+![](http://g.recordit.co/a3JmUuYZeX.gif)
 
 How to run locally
 ====================
