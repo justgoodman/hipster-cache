@@ -16,6 +16,7 @@ const (
 	ttlSeconds      = "EX"
 	ttlMilliseconds = "PX"
 	exitCommand     = "EXIT"
+	pingCommand	= "PING"
 	endSymbol       = "\n"
 )
 
@@ -96,7 +97,6 @@ func (s *CacheServer) getClientMessage(command string) (*ClientMessage, error) {
 }
 
 func (s *CacheServer) getResponse(clientMessage *ClientMessage) (string, error) {
-
 	// Check key lenght
 	if len(clientMessage.params) >= 1 {
 		if int(s.hashTable.MaxKeyLenght) < utf8.RuneCount([]byte(clientMessage.params[0])) {
@@ -105,6 +105,8 @@ func (s *CacheServer) getResponse(clientMessage *ClientMessage) (string, error) 
 	}
 
 	switch clientMessage.command {
+	case pingCommand:
+		return `"pong"`, nil
 	case value_type.GetStringCmdName:
 		if len(clientMessage.params) != 1 {
 			return "", fmt.Errorf(`Error: incorrect parametes count need "1", was sended "%d"`, len(clientMessage.params))
@@ -205,5 +207,5 @@ func (s *CacheServer) getResponse(clientMessage *ClientMessage) (string, error) 
 		return getAllDictOperation.GetResult()
 
 	}
-	return "No error", nil
+	return "Command not found", nil
 }

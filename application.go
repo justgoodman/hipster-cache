@@ -69,7 +69,12 @@ func (a *Application) registerService(catalog *consulapi.Catalog, serviceName, n
 		Node:       nodeName,
 		Address:    a.config.Address,
 		Service:    service,
+		TaggedAddresses: map[string]string{
+			"lan": a.config.Address,
+			"wan": a.config.Address,
+		},
 	}
+	fmt.Printf("\n Registered '%#v' \n", reg)
 	_, err := catalog.Register(reg, nil)
 	return err
 }

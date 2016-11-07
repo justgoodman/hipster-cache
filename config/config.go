@@ -12,6 +12,7 @@ type Config struct {
 	MetricsPort   int    `json:"metrics_port"`
 	ServerPort    int    `json:"server_port"`
 	Address       string `json:"address"`
+	WANAddress    string `json:"wan_address"`
 	ConsulAddress string `json:"consul_address"`
 	MaxBytesSize  int64  `json:"maximum_bytes_size"`
 	MaxLenghtKey  int64  `json:"maximum_lenght_key"`
@@ -35,6 +36,11 @@ func (c *Config) LoadFile(configPath string) error {
 	if serverIP := os.Getenv("SERVER_IP"); serverIP != "" {
 		c.Address = serverIP
 	}
+
+	if externalIP := os.Getenv("EXTERNAL_IP"); externalIP != "" {
+	       c.WANAddress = externalIP
+	}
+
 	if consulURL := os.Getenv("CONSUL_URL"); consulURL != "" {
 		c.ConsulAddress = consulURL
 	}
