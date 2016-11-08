@@ -97,7 +97,8 @@ Kubernetes
 ==================
 All services deployed in K8 and Work) <br/>
 
-**Example of usage**:<br/>
+Example of usage:
+-------------------
 ![](https://github.com/justgoodman/test/blob/master/pics/hipster-cache-manial.gif)<br/>
 
 Hipster-Cache-Proxy
@@ -121,10 +122,14 @@ IP: 130.211.69.21<br/>
 Application port: 4011 <br/>
 Metrics port: 4012<br/>
 <br/>
-You can see this addressed in Services information:</br>
+Services:
+-----------
 ![](http://dl2.joxi.net/drive/2016/11/08/0011/0529/758289/89/778ee18438.jpg)<br/>
-Information about Pods:<br/><br/>
+Pods:
+-----------
 ![](http://dl1.joxi.net/drive/2016/11/08/0011/0529/758289/89/d783f91d15.jpg)<br/>
+Configs:
+-----------
 Kubernetes config you can see in this page:<br/>
 https://github.com/justgoodman/hipster-cache/tree/master/kubernetes <br />
 
