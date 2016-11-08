@@ -95,6 +95,7 @@ http://104.199.49.154:9090/targets <br /><br />
 
 Kubernetes 
 ==================
+![](https://github.com/justgoodman/test/blob/master/pics/hipster-cache-manial.gif)<br/>
 All services deployed in K8, but i don't fixed all connection bugs between pods <br/>
 <br/>
 My Pods:<br/><br/>

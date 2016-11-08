@@ -16,7 +16,7 @@ const (
 	ttlSeconds      = "EX"
 	ttlMilliseconds = "PX"
 	exitCommand     = "EXIT"
-	pingCommand	= "PING"
+	pingCommand     = "PING"
 	endSymbol       = "\n"
 )
 

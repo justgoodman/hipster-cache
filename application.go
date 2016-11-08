@@ -71,7 +71,7 @@ func (a *Application) registerService(catalog *consulapi.Catalog, serviceName, n
 		Service:    service,
 		TaggedAddresses: map[string]string{
 			"lan": a.config.Address,
-			"wan": a.config.Address,
+			"wan": a.config.WANAddress,
 		},
 	}
 	fmt.Printf("\n Registered '%#v' \n", reg)

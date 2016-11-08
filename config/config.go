@@ -38,7 +38,7 @@ func (c *Config) LoadFile(configPath string) error {
 	}
 
 	if externalIP := os.Getenv("EXTERNAL_IP"); externalIP != "" {
-	       c.WANAddress = externalIP
+		c.WANAddress = externalIP
 	}
 
 	if consulURL := os.Getenv("CONSUL_URL"); consulURL != "" {
