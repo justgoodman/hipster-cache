@@ -95,13 +95,33 @@ http://104.199.49.154:9090/targets <br /><br />
 
 Kubernetes 
 ==================
+All services deployed in K8 and Work) <br/>
+
+**Example of usage**:<br/>
 ![](https://github.com/justgoodman/test/blob/master/pics/hipster-cache-manial.gif)<br/>
-All services deployed in K8, but i don't fixed all connection bugs between pods <br/>
+
+Addresses:<br/>
+**Hipster-Cache-Proxy**<br/>
+IP: 130.211.82.2 <br/>
+Application port: 4001 <br/>
+Metrics port: 4002 <br/>
+** Hipster-Cache-Server1**<br/>
+IP: 104.155.106.91 <br/>
+Application port: 4011 <br/>
+Metrics port: 4012<br/>
+** Hipster-Cache-Server2**<br/>
+IP: 104.155.86.180<br/>
+Application port: 4011 <br/>
+Metrics port: 4012<br/>
+** Hipster-Cache-Server3**<br/>
+IP: 130.211.69.21<br/>
+Application port: 4011 <br/>
+Metrics port: 4012<br/>
 <br/>
-My Pods:<br/><br/>
-![](http://dl2.joxi.net/drive/2016/11/01/0011/0529/758289/89/3a601a70ab.jpg)<br/>
-My Services:<br/><br/>
-![](http://dl2.joxi.net/drive/2016/11/01/0011/0529/758289/89/e64aa1e9c9.jpg)<br/>
+You can see this addressed in Services information:</br>
+![](http://dl2.joxi.net/drive/2016/11/08/0011/0529/758289/89/778ee18438.jpg)<br/>
+Information about Pods:<br/><br/>
+![](http://dl1.joxi.net/drive/2016/11/08/0011/0529/758289/89/d783f91d15.jpg)<br/>
 Kubernetes config you can see in this page:<br/>
 https://github.com/justgoodman/hipster-cache/tree/master/kubernetes <br />
 
