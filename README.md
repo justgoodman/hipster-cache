@@ -146,6 +146,26 @@ Also you have opportunity connect directly to needed CacheServer
 ![](http://dl1.joxi.net/drive/2016/11/01/0011/0529/758289/89/13df8f5ef9.jpg)<br />
 (i have bug with additional \n :-) ) <br />
 
+Proxy 
+-------
+This commands can be runned only on  proxy server: </br>
+**GET_SHARD** key <br/>
+
+Get shard address of the key.
+
+Examples:<br/>
+hipster_cache>GET_SHARD hello<br/>
+"130.211.69.21:4011"<br/>
+<br/>
+**GET_SHARDING**<br>
+
+Return information about all shard nodes(address,list of virtual nodes) <br/>
+Examples:<br/>
+hipster_cache>GET_SHARDING<br/>
+"address:10.112.1.37,nodes:[52 95 65 6 28 19 38 47 12 9 87 33 73 26 4 22 43 69 63 51 61 56 1 15 2 82 39 70 20 11 42 5 94]" </br>
+"address:10.112.2.34,nodes:[75 37 7 14 85 53 36 17 18 76 99 57 72 31 10 46 93 89 40 91 80 29 88 79 74 98 35 16 3 97 66 92 81 32]" </br>
+"address:10.112.1.38,nodes:[62 83 55 64 49 0 25 86 23 96 50 58 48 45 44 8 21 30 90 67 34 84 27 77 68 59 24 54 78 13 41 71 60]" </br>
+
 Strings
 -------
 
