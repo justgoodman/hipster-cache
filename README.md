@@ -100,20 +100,23 @@ All services deployed in K8 and Work) <br/>
 **Example of usage**:<br/>
 ![](https://github.com/justgoodman/test/blob/master/pics/hipster-cache-manial.gif)<br/>
 
-Addresses:<br/>
-**Hipster-Cache-Proxy**<br/>
+Hipster-Cache-Proxy
+------------------
 IP: 130.211.82.2 <br/>
 Application port: 4001 <br/>
 Metrics port: 4002 <br/>
-** Hipster-Cache-Server1**<br/>
+Hipster-Cache-Server1<br/>
+--------------------
 IP: 104.155.106.91 <br/>
 Application port: 4011 <br/>
 Metrics port: 4012<br/>
-** Hipster-Cache-Server2**<br/>
+Hipster-Cache-Server2<br/>
+--------------------
 IP: 104.155.86.180<br/>
 Application port: 4011 <br/>
 Metrics port: 4012<br/>
-** Hipster-Cache-Server3**<br/>
+Hipster-Cache-Server3<br/>
+--------------------
 IP: 130.211.69.21<br/>
 Application port: 4011 <br/>
 Metrics port: 4012<br/>
