@@ -88,18 +88,21 @@ func (h *HashTable) InitMetrics() {
 		Help:      "Count of elements stored in hipster cache",
 		Namespace: namespace,
 	})
+	prometheus.Register(h.countElementsMetric)
 
 	h.bytesSizeMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name:      "bytes_total",
 		Help:      "Size of cache in bytes",
 		Namespace: namespace,
 	})
+	prometheus.Register(h.bytesSizeMetric)
 
 	h.maxChainLenghtMetric = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name:      "max_chain_lenght_total",
 		Help:      "Maximum size of chein",
 		Namespace: namespace,
 	})
+	prometheus.Register(h.maxChainLenghtMetric)
 
 	h.responseTimeMetric = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Name:      "response_time_microseconds",
@@ -107,22 +110,31 @@ func (h *HashTable) InitMetrics() {
 		Namespace: namespace,
 	}, []string{"operation", "is_error"})
 
+	prometheus.Register(h.responseTimeMetric)
+
 	h.reHashingTimeMetric = prometheus.NewSummary(prometheus.SummaryOpts{
 		Name:      "rehashing_time_microseconds",
 		Help:      "Rehashing duration",
 		Namespace: namespace,
 	})
+
+	prometheus.Register(h.reHashingTimeMetric)
+
 	h.hitCountMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Name:      "hit_total",
 		Help:      "Hit count",
 		Namespace: namespace,
 	})
 
+	prometheus.Register(h.hitCountMetric)
+
 	h.missCountMetric = prometheus.NewCounter(prometheus.CounterOpts{
 		Name:      "miss_total",
 		Help:      "Miss count",
 		Namespace: namespace,
 	})
+
+	prometheus.Register(h.missCountMetric)
 
 }
 
