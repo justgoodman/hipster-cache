@@ -7,7 +7,7 @@ consul5:
     - ./consul/config:/consul/config
     - ./consul/bin:/consul/bin
 hipster_cache5:
-   image: golang:1.7 
+   image: golang:1.7
    ports: 
     - "4000:4000"
     - "4003:4003"
@@ -17,12 +17,13 @@ hipster_cache5:
    links:
     - consul5
    environment:
-    - CONSUL_URL=consul5:8500 
-    - SERVER_IP=hipster_cache5 
+    - CONSUL_URL=consul5:8500
+    - SERVER_IP=hipster_cache5
+    - EXTERNAL_IP=hipster_cache5
     - METRICS_PORT=4000
     - SERVER_PORT=4003
 hipster_cache2_1:
-   image: golang:1.7 
+   image: golang:1.7
    ports: 
     - "4021:4021"
     - "4022:4022"
@@ -32,12 +33,13 @@ hipster_cache2_1:
    links:
     - consul5
    environment:
-    - CONSUL_URL=consul5:8500 
-    - SERVER_IP=hipster_cache2_1 
+    - CONSUL_URL=consul5:8500
+    - SERVER_IP=hipster_cache2_1
+    - EXTERNAL_IP=hipster_cache2_1
     - METRICS_PORT=4021
     - SERVER_PORT=4022
 hipster_cache3_1:
-   image: golang:1.7 
+   image: golang:1.7
    ports: 
     - "4031:4031"
     - "4032:4032"
@@ -47,16 +49,17 @@ hipster_cache3_1:
    links:
     - consul5
    environment:
-    - CONSUL_URL=consul5:8500 
-    - SERVER_IP=hipster_cache3_1 
+    - CONSUL_URL=consul5:8500
+    - SERVER_IP=hipster_cache3_1
+    - EXTERNAL_IP=hipster_cache3_1
     - METRICS_PORT=4031
     - SERVER_PORT=4032
 hipster_client:
   image: golang:1.7
   ports:
    - "4041:4041"
-#  command: go test /go/src/hipster-cache-client/test/... 
-  command: sleep 10000 
+#  command: go test /go/src/hipster-cache-client/test/...
+  command: sleep 10000
   volumes:
     - ./hipster-cache-client:/go/src/hipster-cache-client
   links:
@@ -68,7 +71,7 @@ hipster_client:
     - PROXY_ADDRESS=hipster-cache-proxy4
     - PROXY_PORT=4001
 hipster-cache-proxy4:
-   image: golang:1.7 
+   image: golang:1.7
    ports: 
     - "4001:4001"
     - "4002:4002"
@@ -89,6 +92,8 @@ prometheus2:
     - "9090:9090"
    links:
     - hipster_cache5
+    - hipster_cache2_1
+    - hipster_cache3_1
     - hipster-cache-proxy4
     - consul5
 grafana:
@@ -97,5 +102,5 @@ grafana:
      - "3001:3000"
    links:
      - prometheus2
-   environment: 
+   environment:
      - GF_SERVER_ROOT_URL=http://grafana.net

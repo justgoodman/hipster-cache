@@ -4,4 +4,4 @@ metadata:
   name: server-config 
 data:
   application.json: |-
-    {"metrics_port": 4012,"server_port": 4011,"client_port": 4014, "address": "104.155.49.205", "consul_address": "consul", "maximum_lenght_key": 255, "maximum_bytes_size": 104857600, "init_capacity": 100,"node_name":"node1"}
+    {"metrics_port": 4012,"server_port": 4011,"client_port": 4014, "address": "104.155.49.205", "consul_address": "consul", "maximum_lenght_key": 255, "maximum_bytes_size": 104857600, "init_capacity": 1000000,"node_name":"node1"}

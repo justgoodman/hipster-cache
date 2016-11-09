@@ -1,0 +1,21 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: server2
+spec:
+  selector:
+    app: server2
+  ports:
+    - protocol: "TCP"
+      port: 4011 
+      targetPort: 4011
+      name: http
+    - protocol: "TCP"
+      port: 4012 
+      targetPort: 4012
+      name: metrics
+    - protocol: "TCP"
+      port: 4014 
+      targetPort: 4014
+      name: client
+  type: LoadBalancer

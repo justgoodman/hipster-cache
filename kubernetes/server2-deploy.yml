@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: server
+  name: server2
 spec:
   replicas: 1
   strategy:
@@ -11,10 +11,10 @@ spec:
   template:
     metadata:
       labels:
-        app: server
+        app: server2
     spec:
       containers:
-      - name: server
+      - name: server2
         image: "gcr.io/metal-cascade-146909/server:0.12"
         imagePullPolicy: Always
         env:
@@ -28,7 +28,7 @@ spec:
             fieldRef:
               fieldPath: status.podIP
         - name: EXTERNAL_IP
-          value: 104.155.106.91
+          value: 104.155.86.180
         ports:
         - name: http
           containerPort: 4011

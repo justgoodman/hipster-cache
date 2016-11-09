@@ -37,35 +37,3 @@ spec:
     protocol: TCP
     port: 3000
     targetPort: 3000
----
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: grafana
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      name: grafana
-      labels:
-        app: grafana
-    spec:
-      containers:
-      - name: grafana
-        image: grafana/grafana:3.1.1
-        env:
-        - name: GF_SECURITY_ADMIN_PASSWORD
-          value: graf_pass
-        ports:
-        - name: web
-          containerPort: 3000
-        volumeMounts:
-          - mountPath: /var/lib/grafana
-            name: grafana-volume
-      volumes:
-      - name: grafana-volume
-        persistentVolumeClaim:
-          claimName: grafana-data
