@@ -93,6 +93,17 @@ You can see working prometheus service in this link:<br />
 http://104.199.49.154:9090/targets <br /><br />
 ![](http://dl2.joxi.net/drive/2016/11/01/0011/0529/758289/89/ce746fe175.jpg)
 
+Grafana
+===================
+
+You can see hipster-cache dashboard in this link:<br />
+http://104.155.54.131:3000/dashboard/db/hipster-cache <br />
+Login: admin <br/>
+Pass: admin <br/>
+<br />
+![](http://dl2.joxi.net/drive/2016/11/09/0011/0529/758289/89/e78a814dff.jpg)
+
+
 Kubernetes 
 ==================
 All services deployed in K8 and Work) <br/>
